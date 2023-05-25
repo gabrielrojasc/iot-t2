@@ -168,26 +168,3 @@ char *dataprotocol3()
 
   return msg;
 }
-
-char *dataprotocol4()
-{
-
-  char *msg = malloc(dataLength('4'));
-  char *msg1 = dataprotocol1();
-  memcpy((void *)&(msg[0]), (void *)msg1, dataLength('1'));
-  free(msg1);
-
-  int16_t *acc_x = acc_sensor_acc_x();
-  memcpy((void *)&(msg[16]), (void *)acc_x, 8000);
-  free(acc_x);
-
-  int16_t *acc_y = acc_sensor_acc_y();
-  memcpy((void *)&(msg[8016]), (void *)acc_y, 8000);
-  free(acc_y);
-
-  int16_t *acc_z = acc_sensor_acc_z();
-  memcpy((void *)&(msg[16016]), (void *)acc_z, 8000);
-  free(acc_z);
-
-  return msg;
-}
