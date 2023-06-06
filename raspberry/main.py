@@ -1,5 +1,9 @@
 import pygatt
 from time import sleep
+from struct import pack
+
+from unpacking import parse_data
+from db import get_configs
 
 # Definir los UUIDs de los servicios y características del dispositivo BLE
 DEVICE_ADDRESS = "4C:EB:D6:62:18:3A"
@@ -39,6 +43,8 @@ def connect():
     )
     device.subscribe(CHARACTERISTIC_UUID, callback=handle_notification)
 
+    return device
+
 
 # Función para desconectar del dispositivo BLE
 def disconnect():
@@ -54,9 +60,13 @@ def handle_notification(handle, value):
 
 # Bucle principal de la máquina de estado
 while True:
+    device = None
     if state == STATE_DISCONNECTED:
         # Si el estado actual es desconectado, intentar conectar
-        connect()
+        try:
+            device = connect()
+        except:
+            continue
     elif state == STATE_CONNECTING:
         # Si el estado actual es conectando, esperar hasta que se conecte o se agote el tiempo de espera
         try:
@@ -64,6 +74,22 @@ while True:
             sleep(1)
         except pygatt.exceptions.BLEError:
             pass
-    elif state == STATE_CONNECTED:
+    elif state == STATE_CONNECTED and device is not None:
         # Si el estado actual es conectado, hacer cualquier operación necesaria en el dispositivo
+        # transport_layer=10 -> Config
+        # transport_layer=30 -> Continua
+        # transport_layer=31 -> Discontinua
+        for protocol, transport_layer in get_configs():
+            print(f"Sending config: {protocol=}, {transport_layer}")
+            packet = pack("<2c", str(protocol).encode(), str(transport_layer).encode())
+            device.char_write(CHARACTERISTIC_UUID, packet, wait_for_response=True)
+
+            print(f"Reading data...")
+            raw_data = device.char_read(CHARACTERISTIC_UUID)
+            print(f"Raw data received: {raw_data}")
+
+            data = parse_data(raw_data, protocol)
+            print(f"Data parse: {data}")
+
+
         sleep(1)
