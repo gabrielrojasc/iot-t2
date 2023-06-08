@@ -22,7 +22,7 @@ class ReceiveNotification(object):
     def __init__(self, req):
         self.received = Event()
         self.requester = req
-        self.requester.wakeup = self.received
+        setattr(self.requester, "wakeup", self.received)
 
         self.wait_notification()
 
