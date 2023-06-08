@@ -12,6 +12,10 @@ WRITE_HANDLE = 43
 
 
 class Requester(GATTRequester):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.wakeup = Event()
+
     def on_notification(self, handle, data):
         print("- notification on handle: {}\n".format(handle))
         print(f"{data=}")
@@ -20,10 +24,7 @@ class Requester(GATTRequester):
 
 class ReceiveNotification(object):
     def __init__(self, req):
-        self.received = Event()
         self.requester = req
-        setattr(self.requester, "wakeup", self.received)
-
         self.wait_notification()
 
     def connect(self):
