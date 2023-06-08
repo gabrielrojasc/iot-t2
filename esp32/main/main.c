@@ -21,6 +21,12 @@
 
 #define GATTS_TAG "GATTS_DEMO"
 
+// 10 == configuracion
+// 30 == continuo
+// 31 == discontinuo
+int status = 10;
+char protocol = '0';
+
 /// Declare the static function
 static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param);
 
@@ -377,11 +383,9 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
     esp_gatt_rsp_t rsp;
     memset(&rsp, 0, sizeof(esp_gatt_rsp_t));
     rsp.attr_value.handle = param->read.handle;
-    rsp.attr_value.len = 4;
-    rsp.attr_value.value[0] = 0xde;
-    rsp.attr_value.value[1] = 0xed;
-    rsp.attr_value.value[2] = 0xbe;
-    rsp.attr_value.value[3] = 0xef;
+    rsp.attr_value.len = 2;
+    rsp.attr_value.value[0] = protocol;
+    rsp.attr_value.value[1] = status;
     esp_ble_gatts_send_response(gatts_if, param->read.conn_id, param->read.trans_id,
                                 ESP_GATT_OK, &rsp);
     break;
@@ -393,6 +397,8 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
     {
       ESP_LOGI(GATTS_TAG, "GATT_WRITE_EVT, value len %d, value :", param->write.len);
       esp_log_buffer_hex(GATTS_TAG, param->write.value, param->write.len);
+      protocol = param->write.value[0];
+      status = param->write.value[1];
       if (gl_profile_tab[PROFILE_A_APP_ID].descr_handle == param->write.handle && param->write.len == 2)
       {
         uint16_t descr_value = param->write.value[1] << 8 | param->write.value[0];
