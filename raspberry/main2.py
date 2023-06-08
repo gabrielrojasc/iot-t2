@@ -25,6 +25,7 @@ class Requester(GATTRequester):
 class ReceiveNotification(object):
     def __init__(self, req):
         self.requester = req
+        self.recieved = self.requester.wakeup
         self.wait_notification()
 
     def connect(self):
