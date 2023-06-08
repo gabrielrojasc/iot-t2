@@ -1,6 +1,6 @@
 from time import sleep
 from struct import pack
-from gattlib import GATTRequester
+from gattlib import GATTRequester, BTIOException
 
 DEVICE_ADDRESS = "4C:EB:D6:62:18:3A"
 SERVICE_UUID = "000000FF-0000-1000-8000-00805f9b34fb"
@@ -19,8 +19,8 @@ class MyRequester(GATTRequester):
 req = MyRequester(DEVICE_ADDRESS, False)
 
 
-def get_config_packet(protocol, status):
-    return pack("<2c", protocol.encode(), status.encode())
+def get_config_packet(profile, protocol, status):
+    return pack("<3B", profile, protocol.encode(), status)
 
 
 # Bucle principal de la máquina de estado
@@ -30,11 +30,14 @@ while True:
             req.connect(True)
         else:
             print("connected")
-    except Exception:
+
+        # write config
+        req.write_by_handle(WRITE_HANDLE, get_config_packet(1, "1", 30))
+
+        req.read()
+
+        sleep(1)
+    except BTIOException:
         print("Error de conexión")
         sleep(1)
         continue
-
-    req.write_by_handle(WRITE_HANDLE, get_config_packet("1", chr(30)))
-    print(req.read_by_handle(READ_HANDLE))
-    sleep(1)

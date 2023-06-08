@@ -21,14 +21,24 @@
 
 #define GATTS_TAG "GATTS_DEMO"
 
-// 10 == configuracion
-// 30 == continuo
-// 31 == discontinuo
-int status = 10;
-char protocol = '0';
+/*
+status:
+10 == 0x0a == configuracion
+30 == 0x1e == continuo
+31 == 0x1f ==discontinuo
+
+protocol: (4 not used for thiw HW)
+0,1,2,3,4
+*/
+struct
+{
+  int status;
+  char procotol;
+} config;
 
 /// Declare the static function
-static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param);
+static void
+gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param);
 
 #define GATTS_SERVICE_UUID_TEST_A 0x00FF
 #define GATTS_CHAR_UUID_TEST_A 0xFF01
@@ -150,7 +160,7 @@ static esp_ble_adv_params_t adv_params = {
     .adv_filter_policy = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
 };
 
-#define PROFILE_NUM 2
+#define PROFILE_NUM 1
 #define PROFILE_A_APP_ID 0
 
 struct gatts_profile_inst
@@ -384,8 +394,8 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
     memset(&rsp, 0, sizeof(esp_gatt_rsp_t));
     rsp.attr_value.handle = param->read.handle;
     rsp.attr_value.len = 2;
-    rsp.attr_value.value[0] = protocol;
-    rsp.attr_value.value[1] = status;
+    rsp.attr_value.value[0] = 0x0a;
+    rsp.attr_value.value[1] = 0x1f;
     esp_ble_gatts_send_response(gatts_if, param->read.conn_id, param->read.trans_id,
                                 ESP_GATT_OK, &rsp);
     break;
@@ -397,10 +407,18 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
     {
       ESP_LOGI(GATTS_TAG, "GATT_WRITE_EVT, value len %d, value :", param->write.len);
       esp_log_buffer_hex(GATTS_TAG, param->write.value, param->write.len);
-      protocol = param->write.value[0];
-      status = param->write.value[1];
+      ESP_LOGI(GATTS_TAG, "notify enable");
+      uint8_t notify_data[15];
+      for (int i = 0; i < sizeof(notify_data); ++i)
+      {
+        notify_data[i] = i % 0xff;
+      }
+      // the size of notify_data[] need less than MTU size
+      esp_ble_gatts_send_indicate(gatts_if, param->write.conn_id, gl_profile_tab[PROFILE_A_APP_ID].char_handle,
+                                  sizeof(notify_data), notify_data, false);
       if (gl_profile_tab[PROFILE_A_APP_ID].descr_handle == param->write.handle && param->write.len == 2)
       {
+        ESP_LOGI(GATTS_TAG, "aca");
         uint16_t descr_value = param->write.value[1] << 8 | param->write.value[0];
         if (descr_value == 0x0001)
         {
