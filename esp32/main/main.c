@@ -511,13 +511,6 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
       esp_log_buffer_hex(GATTS_TAG, param->write.value, param->write.len);
       ESP_LOGI(GATTS_TAG, "GATT_WRITE_EVT, value len %d, value :", param->write.len);
       esp_log_buffer_hex(GATTS_TAG, param->write.value, param->write.len);
-      int status = param->write.value[2];
-      char protocol = param->write.value[3];
-      config_t config;
-      config.status = status;
-      config.protocol = protocol;
-      ESP_LOGI("CONFIG_CHANGE", "status: %d, protocol: %c", status, protocol);
-      store_config(&config);
       if (gl_profile_tab[PROFILE_A_APP_ID].descr_handle == param->write.handle && param->write.len == 2)
       {
         uint16_t descr_value = param->write.value[1] << 8 | param->write.value[0];
@@ -549,7 +542,14 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         }
         else if (descr_value == 0x0000)
         {
-          ESP_LOGI(GATTS_TAG, "notify/indicate disable ");
+          int status = param->write.value[2];
+          char protocol = param->write.value[3];
+          config_t config;
+          config.status = status;
+          config.protocol = protocol;
+          ESP_LOGI("CHANGE_CONFIG", "status: %d, protocol: %c", status, protocol);
+          store_config(&config);
+          esp_restart();
         }
         else
         {

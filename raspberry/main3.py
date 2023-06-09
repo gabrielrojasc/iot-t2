@@ -55,7 +55,9 @@ class GATTHelper:
 
 
 class StateMachine(GATTHelper):
-    def __init__(self):
+    def __init__(self, status, protocol):
+        self.status = status
+        self.protocol = protocol
         self.state = State.DISCONNECTED
         self.loop = asyncio.get_event_loop()
         self.device_address = "4C:EB:D6:62:18:3A"
@@ -112,7 +114,7 @@ class StateMachine(GATTHelper):
 
     def configuration_state(self):
         try:
-            self.write_gatt_char(get_config_packet(30, "0"))
+            self.write_gatt_char(get_config_packet(self.status, self.protocol))
         except Exception as e:
             logger.info(f"Error writing to device: {e}")
             self.state = State.DISCONNECTED
@@ -135,5 +137,5 @@ class StateMachine(GATTHelper):
 
 
 if __name__ == "__main__":
-    sm = StateMachine()
+    sm = StateMachine(30, "0")
     sm.start()
