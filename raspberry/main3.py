@@ -27,7 +27,8 @@ class State(Enum):
     DISCONNECTED = 0
     CONFIGURATION = 1
     CONNECTING = 2
-    CONNECTED = 3
+    RECONNECTIONG = 3
+    CONNECTED = 4
 
 
 class GATTHelper:
@@ -67,10 +68,12 @@ class StateMachine(GATTHelper):
         while True:
             if self.state == State.DISCONNECTED:
                 self.disconnected_state()
-            elif self.state == State.CONFIGURATION:
-                self.configuration_state()
             elif self.state == State.CONNECTING:
                 self.check_connection()
+            elif self.state == State.CONFIGURATION:
+                self.configuration_state()
+            elif self.state == State.RECONNECTING:
+                self.reconnecting_state()
             elif self.state == State.CONNECTED:
                 self.connected_state()
 
@@ -95,14 +98,27 @@ class StateMachine(GATTHelper):
                 print("Error connecting to device: {}".format(e))
                 self.state = State.DISCONNECTED
 
+    def reconnecting_state(self):
+        self.loop.run_until_complete(self.reconnecting_state_async())
+
+    async def reconnecting_state_async(self):
+        if not self.client.is_connected:
+            try:
+                await self.client.connect()
+                self.state = State.CONNECTED
+            except Exception as e:
+                print("Error connecting to device: {}".format(e))
+                self.state = State.RECONNECTING
+
     def configuration_state(self):
-        # write config and subscribe
-        self.write_gatt_char(get_config_packet(30, "0"))
-        self.susbscribe_gatt_char(self.notify_callback)
-        self.state = State.CONNECTED
+        try:
+            self.write_gatt_char(get_config_packet(30, "0"))
+        except Exception as e:
+            logger.info(f"Error writing to device: {e}")
+            self.state = State.DISCONNECTED
 
     def connected_state(self):
-        ...
+        self.susbscribe_gatt_char(self.notify_callback)
 
     def notify_callback(self, sender, data):
         data = self.read_gatt_char()
