@@ -20,6 +20,8 @@ class Requester(GATTRequester):
         if data:
             packet = self.read_by_handle(handle)
             print(f"{packet=}")
+        else:
+            print("no leyendo")
         self.wakeup.set()
 
 
