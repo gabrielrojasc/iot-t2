@@ -70,11 +70,13 @@ def main():
                     print("connected")
 
                 # write config
-                req.write_by_handle(WRITE_HANDLE, get_config_packet(status, protocol))
+                req.write_by_handle(
+                    WRITE_HANDLE, get_config_packet(chr(status), protocol)
+                )
                 for _ in range(3):
                     rec_not = ReceiveNotification(req)
                     rec_not.wait_notification()
-                req.write_by_handle(WRITE_HANDLE, get_config_packet(10, "0"))
+                req.write_by_handle(WRITE_HANDLE, get_config_packet(chr(10), "0"))
                 break
             except BTIOException:
                 print("Error de conexión")
