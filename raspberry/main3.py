@@ -4,6 +4,7 @@ from time import sleep
 from struct import pack
 import logging
 
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 DEVICE_ADDRESS = "4C:EB:D6:62:18:3A"
