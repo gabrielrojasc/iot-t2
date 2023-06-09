@@ -543,6 +543,10 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         }
         else if (descr_value == 0x0000)
         {
+          ESP_LOGI(GATTS_TAG, "notify/indicate disable ");
+        }
+        else if (descr_value == 0x0003)
+        {
           int status = param->write.value[2];
           char protocol = param->write.value[3];
           config_t config;

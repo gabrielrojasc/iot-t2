@@ -12,12 +12,12 @@ CHARACTERISTIC_UUID = "0000FF01-0000-1000-8000-00805f9b34fb"
 
 
 def get_config_packet(status, protocol):
-    return pack("<2B2c", 0, 0, chr(status).encode(), protocol.encode())
+    return pack("<2B2c", 0, 3, chr(status).encode(), protocol.encode())
 
 
 def get_status_protocol_pairs():
     status_protocol_pairs = []
-    for status in (31, 30):
+    for status in (30, 31):
         for protocol in range(4):
             status_protocol_pairs.append((status, str(protocol)))
     return status_protocol_pairs
