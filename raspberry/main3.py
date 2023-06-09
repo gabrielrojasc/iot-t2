@@ -36,14 +36,14 @@ class GATTHelper:
     async def write_gatt_char_async(self, data):
         return await self.client.write_gatt_char(self.characteristic_uuid, data)
 
-    def susbscribe_gatt_char(self):
+    def susbscribe_gatt_char(self, notify_callback):
         logger.info(f"Subscribing to {self.characteristic_uuid}")
-        return self.loop.run_until_complete(self.susbscribe_gatt_char_async())
-
-    async def susbscribe_gatt_char_async(self):
-        return await self.client.start_notify(
-            self.characteristic_uuid, self.notify_callback
+        return self.loop.run_until_complete(
+            self.susbscribe_gatt_char_async(notify_callback)
         )
+
+    async def susbscribe_gatt_char_async(self, notify_callback):
+        return await self.client.start_notify(self.characteristic_uuid, notify_callback)
 
 
 class StateMachine(GATTHelper):
@@ -89,7 +89,7 @@ class StateMachine(GATTHelper):
         if self.first_connection:
             # write config and subscribe
             self.write_gatt_char(get_config_packet(30, "0"))
-            self.susbscribe_gatt_char()
+            self.susbscribe_gatt_char(self.notify_callback)
             self.first_connection = False
 
     def notify_callback(self, sender, data):
