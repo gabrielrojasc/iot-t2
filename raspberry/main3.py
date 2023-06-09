@@ -29,6 +29,7 @@ async def main():
     for status, protocol in status_protocol_pairs:
         print(f"status: {status}, protocol: {protocol}")
         async with BleakClient(DEVICE_ADDRESS, on_disconnect) as client:
+            client.connect()
             config_packet = get_config_packet(status, protocol)
             client.write_gatt_char(CHARACTERISTIC_UUID, config_packet)
             sleep(1)
