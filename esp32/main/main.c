@@ -29,7 +29,7 @@ void send_indicate();
 // Global variables for namespace and key
 const char *g_namespace = "my_namespace";
 const char *g_key = "my_key";
-const bool needs_reset = false;
+bool needs_reset = false;
 
 /*
 status:
