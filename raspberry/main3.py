@@ -32,7 +32,7 @@ class StateMachine:
             if self.state == "disconnected":
                 await self.disconnected_state()
             elif self.state == "connecting":
-                await self.connecting_state()
+                await self.check_connection()
             elif self.state == "connected":
                 await self.connected_state()
 
@@ -42,20 +42,8 @@ class StateMachine:
             return
 
         print(f"Disconnected. Connecting to device: {self.device_address}")
-        try:
-            self.client = BleakClient(self.device_address)
-            self.state = "connecting"
-        except Exception as e:
-            print(f"Connection failed: {e}")
-            await asyncio.sleep(1)  # Wait for a while before retrying
-
-    async def connecting_state(self):
-        if await self.client.connect():
-            print("Connected.")
-            self.state = "connected"
-        else:
-            print("Connection failed. Retrying...")
-            await asyncio.sleep(1)  # Wait for a while before retrying
+        self.client = BleakClient(self.device_address)
+        self.state = "connecting"
 
     async def connected_state(self):
         while self.state == "connected":
@@ -82,12 +70,12 @@ class StateMachine:
     async def check_connection(self):
         """Check if the client is still connected."""
         if not await self.client.is_connected():
-            try:
-                await self.client.connect()
-                return await self.client.is_connected()
-            except Exception as e:
-                print(f"Reconnection failed: {e}")
-                return False
+            while True:
+                try:
+                    await self.client.connect()
+                    return await self.client.is_connected()
+                except Exception as e:
+                    print(f"Reconnection failed: {e}")
         return True
 
 
