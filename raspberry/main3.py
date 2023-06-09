@@ -37,7 +37,7 @@ class GATTHelper:
         return await self.client.write_gatt_char(self.characteristic_uuid, data)
 
     def susbscribe_gatt_char(self):
-        logget.info(f"Subscribing to {self.characteristic_uuid}")
+        logger.info(f"Subscribing to {self.characteristic_uuid}")
         return self.loop.run_until_complete(self.susbscribe_gatt_char_async())
 
     async def susbscribe_gatt_char_async(self):
