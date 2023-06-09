@@ -42,8 +42,11 @@ class StateMachine:
             return
 
         print(f"Disconnected. Connecting to device: {self.device_address}")
-        self.client = BleakClient(self.device_address)
-        self.state = "connecting"
+        try:
+            self.client = BleakClient(self.device_address)
+            self.state = "connecting"
+        except Exception as e:
+            print(f"Connection failed: {e}")
 
     async def connecting_state(self):
         if await self.client.connect():
