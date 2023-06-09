@@ -19,16 +19,25 @@ def get_status_protocol_pairs():
     return status_protocol_pairs
 
 
-def on_disconnect(client):
+def disconnected_callback(client):
     print("reconnecting...")
     client.connect()
+
+
+class Client(BleakClient):
+    async def connect(self):
+        try:
+            await super().connect()
+        except Exception:
+            print("reconnecting...")
+            await self.connect()
 
 
 async def main():
     status_protocol_pairs = get_status_protocol_pairs()
     for status, protocol in status_protocol_pairs:
         print(f"status: {status}, protocol: {protocol}")
-        client = BleakClient(DEVICE_ADDRESS, on_disconnect)
+        client = Client(DEVICE_ADDRESS, disconnected_callback=disconnected_callback)
         await client.connect()
         config_packet = get_config_packet(status, protocol)
         client.write_gatt_char(CHARACTERISTIC_UUID, config_packet)
