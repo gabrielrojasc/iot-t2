@@ -2,7 +2,7 @@ import sys
 from time import sleep
 from threading import Event
 from struct import pack
-from gattlib import GATTRequester, BTIOException
+from gattlib import GATTRequester, BTIOException, GATTException
 
 DEVICE_ADDRESS = "4C:EB:D6:62:18:3A"
 SERVICE_UUID = "000000FF-0000-1000-8000-00805f9b34fb"
@@ -28,10 +28,11 @@ class Requester(GATTRequester):
         if not self.is_connected():
             try:
                 self.connect(True)
+                print("connected")
             except BTIOException:
-                self.check_connected()
-            finally:
+                print("reconnecting...")
                 sleep(1)
+                self.check_connected()
 
 
 class ReceiveNotification(object):
@@ -74,28 +75,22 @@ def main():
     for status, protocol in get_status_protocol_pairs():
         print(f"{status=}, {protocol=}")
         while True:
+            req.check_connected()
             try:
-                if not req.is_connected():
-                    req.connect(True)
-                    print("connected")
-
-                # write config
-                req.check_connected()
                 req.write_by_handle(
-                    CHAR_HANDLE, get_config_packet(chr(status), protocol), False
+                    CHAR_HANDLE, get_config_packet(chr(status), protocol)
                 )
-                for _ in range(3):
-                    req.check_connected()
-                    rec_not = ReceiveNotification(req)
-                    rec_not.wait_notification()
+            except GATTException:
+                print("No recibimos respuesta del write")
 
+            for _ in range(3):
                 req.check_connected()
-                req.write_by_handle(CHAR_HANDLE, get_config_packet(chr(10), "0"))
-                break
-            except BTIOException:
-                print("Error de conexión")
-                sleep(1.5)
-                continue
+                rec_not = ReceiveNotification(req)
+                rec_not.wait_notification()
+
+            req.check_connected()
+            req.write_by_handle(CHAR_HANDLE, get_config_packet(chr(10), "0"))
+            break
 
 
 if __name__ == "__main__":
