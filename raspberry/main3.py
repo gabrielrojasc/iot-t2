@@ -1,3 +1,4 @@
+import asyncio
 from time import sleep
 from struct import pack
 from bleak import BleakClient
@@ -23,11 +24,11 @@ def on_disconnect(client):
     client.connect()
 
 
-def main():
+async def main():
     status_protocol_pairs = get_status_protocol_pairs()
     for status, protocol in status_protocol_pairs:
         print(f"status: {status}, protocol: {protocol}")
-        with BleakClient(DEVICE_ADDRESS, on_disconnect) as client:
+        async with BleakClient(DEVICE_ADDRESS, on_disconnect) as client:
             config_packet = get_config_packet(status, protocol)
             client.write_gatt_char(CHARACTERISTIC_UUID, config_packet)
             sleep(1)
@@ -36,4 +37,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
