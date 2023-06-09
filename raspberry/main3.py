@@ -140,6 +140,7 @@ class StateMachine(GATTHelper):
         self.packets_received += 1
         if self.packets_received >= 3:
             self.loop.run_until_complete(self.disconnect())
+        self.susbscribe_gatt_char(self.notify_callback)
 
     async def disconnect(self):
         self.write_gatt_char_wait_for_config()
