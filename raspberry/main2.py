@@ -72,7 +72,7 @@ def main():
 
                 # write config
                 req.write_by_handle(
-                    CHAR_HANDLE, get_config_packet(chr(status), protocol)
+                    CHAR_HANDLE, get_config_packet(chr(status), protocol), False
                 )
                 for _ in range(3):
                     rec_not = ReceiveNotification(req)
