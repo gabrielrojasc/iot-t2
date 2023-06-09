@@ -18,6 +18,7 @@ class Requester(GATTRequester):
     def on_notification(self, handle, data):
         print(f"{handle=}, {data=}")
         if data:
+            self.check_connected()
             packet = self.read_by_handle(handle)
             print(f"{packet=}")
         else:
@@ -84,6 +85,7 @@ def main():
                 print("No recibimos respuesta del write")
 
             for _ in range(3):
+                sleep(3)
                 req.check_connected()
                 rec_not = ReceiveNotification(req)
                 rec_not.wait_notification()
