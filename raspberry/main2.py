@@ -31,7 +31,7 @@ class Requester(GATTRequester):
                 print("connected")
             except BTIOException:
                 print("reconnecting...")
-                sleep(1)
+                sleep(1.5)
                 self.check_connected()
 
 
