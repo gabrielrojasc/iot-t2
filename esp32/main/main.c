@@ -672,12 +672,12 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
 void send_indicate()
 {
   ESP_LOGI(GATTS_TAG, "notify enable");
-  uint8_t notify_data = 1;
+  uint8_t notify_data[1] = {1};
   // the size of notify_data[] need less than MTU size
   esp_ble_gatts_send_indicate(gl_profile_tab[PROFILE_A_APP_ID].gatts_if,
                               gl_profile_tab[PROFILE_A_APP_ID].conn_id,
                               gl_profile_tab[PROFILE_A_APP_ID].char_handle,
-                              sizeof(notify_data), &notify_data, false);
+                              sizeof(notify_data), notify_data, false);
 }
 
 void app_main(void)
