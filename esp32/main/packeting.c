@@ -12,7 +12,6 @@ extern char *dataprotocol0();
 extern char *dataprotocol1();
 extern char *dataprotocol2();
 extern char *dataprotocol3();
-extern char *dataprotocol4();
 unsigned short dataLength(char protocol);
 
 /*
@@ -70,9 +69,6 @@ char *mensaje(char protocol, char transportLayer)
     break;
   case '3':
     data = dataprotocol3();
-    break;
-  case '4':
-    data = dataprotocol4();
     break;
   default:
     data = dataprotocol0();

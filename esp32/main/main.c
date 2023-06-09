@@ -8,6 +8,7 @@
 #include "esp_system.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
+#include "nvs.h"
 #include "esp_bt.h"
 
 #include "esp_gap_ble_api.h"
@@ -16,10 +17,18 @@
 #include "esp_bt_main.h"
 #include "esp_gatt_common_api.h"
 #include "esp_gap_ble_api.h"
+#include "esp_sleep.h"
 
 #include "sdkconfig.h"
+#include "packeting.c"
 
 #define GATTS_TAG "GATTS_DEMO"
+
+void send_indicate();
+
+// Global variables for namespace and key
+const char *g_namespace = "my_namespace";
+const char *g_key = "my_key";
 
 /*
 status:
@@ -30,11 +39,60 @@ status:
 protocol: (4 not used for thiw HW)
 0,1,2,3,4
 */
-struct
+typedef struct
 {
   int status;
-  char procotol;
-} config;
+  char protocol;
+} config_t;
+
+esp_err_t store_config(const config_t *config)
+{
+  nvs_handle_t nvs_handle;
+  esp_err_t err = nvs_open(g_namespace, NVS_READWRITE, &nvs_handle);
+  if (err != ESP_OK)
+  {
+    printf("Error opening NVS handle: %d\n", err);
+    return err;
+  }
+
+  err = nvs_set_blob(nvs_handle, g_key, config, sizeof(config_t));
+  if (err != ESP_OK)
+  {
+    printf("Error storing config value in NVS: %d\n", err);
+    nvs_close(nvs_handle);
+    return err;
+  }
+
+  err = nvs_commit(nvs_handle);
+  if (err != ESP_OK)
+  {
+    printf("Error committing NVS namespace: %d\n", err);
+  }
+
+  nvs_close(nvs_handle);
+  return err;
+}
+
+esp_err_t retrieve_config(config_t *config)
+{
+  nvs_handle_t nvs_handle;
+  esp_err_t err = nvs_open(g_namespace, NVS_READONLY, &nvs_handle);
+  if (err != ESP_OK)
+  {
+    printf("Error opening NVS handle: %d\n", err);
+    return err;
+  }
+
+  size_t required_size = sizeof(config_t);
+  err = nvs_get_blob(nvs_handle, g_key, config, &required_size);
+  if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND)
+  {
+    printf("Error retrieving config value from NVS: %d\n", err);
+  }
+
+  nvs_close(nvs_handle);
+  return err;
+}
 
 /// Declare the static function
 static void
@@ -339,6 +397,28 @@ void example_exec_write_event_env(prepare_type_env_t *prepare_write_env, esp_ble
   prepare_write_env->prepare_len = 0;
 }
 
+void ble_continous() {}
+void ble_discontinous()
+{
+  config_t config;
+  retrieve_config(&config);
+  if (config.status == 10)
+  {
+    return;
+  }
+
+  char *payload = mensaje(config.protocol, (char)config.status);
+  int len = sizeof(payload);
+  esp_err_t err = esp_ble_gatts_set_attr_value(gl_profile_tab[PROFILE_A_APP_ID].char_handle, len, (uint8_t *)payload);
+  if (err)
+  {
+    ESP_LOGE(GATTS_TAG, "gatts set attr value failed, error code = %x", err);
+  }
+  send_indicate();
+  vTaskDelay(2000 / portTICK_PERIOD_MS);
+  ble_discontinous();
+}
+
 static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)
 {
   switch (event)
@@ -391,13 +471,24 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
   {
     ESP_LOGI(GATTS_TAG, "GATT_READ_EVT, conn_id %d, trans_id %" PRIu32 ", handle %d\n", param->read.conn_id, param->read.trans_id, param->read.handle);
     esp_gatt_rsp_t rsp;
+
     memset(&rsp, 0, sizeof(esp_gatt_rsp_t));
-    rsp.attr_value.handle = param->read.handle;
-    rsp.attr_value.len = 2;
-    rsp.attr_value.value[0] = 0x0a;
-    rsp.attr_value.value[1] = 0x1f;
+
+    esp_err_t err = esp_ble_gatts_get_attr_value(gl_profile_tab[PROFILE_A_APP_ID].char_handle, &rsp.attr_value.len, (uint8_t *)rsp.attr_value.value);
+
     esp_ble_gatts_send_response(gatts_if, param->read.conn_id, param->read.trans_id,
                                 ESP_GATT_OK, &rsp);
+
+    config_t config;
+    retrieve_config(&config);
+    if (config.status == 31)
+    {
+      ble_discontinous();
+      // TODO: Dejar el timer del sleep en un minuto
+      int discontinous_time = 2 * 1000 * 1000; // 2s
+      esp_sleep_enable_timer_wakeup(discontinous_time);
+      esp_deep_sleep_start();
+    }
     break;
   }
   case ESP_GATTS_WRITE_EVT:
@@ -407,58 +498,24 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
     {
       ESP_LOGI(GATTS_TAG, "GATT_WRITE_EVT, value len %d, value :", param->write.len);
       esp_log_buffer_hex(GATTS_TAG, param->write.value, param->write.len);
-      ESP_LOGI(GATTS_TAG, "notify enable");
-      uint8_t notify_data[15];
-      for (int i = 0; i < sizeof(notify_data); ++i)
+      int status = param->write.value[0];
+      char protocol = param->write.value[1];
+      config_t config;
+      config.status = status;
+      config.protocol = protocol;
+      ESP_LOGI("CONFIG_CHANGE", "status: %d, protocol: %c", status, protocol);
+      store_config(&config);
+      if (status == 10)
       {
-        notify_data[i] = i % 0xff;
+        esp_restart();
       }
-      // the size of notify_data[] need less than MTU size
-      esp_ble_gatts_send_indicate(gatts_if, param->write.conn_id, gl_profile_tab[PROFILE_A_APP_ID].char_handle,
-                                  sizeof(notify_data), notify_data, false);
-      if (gl_profile_tab[PROFILE_A_APP_ID].descr_handle == param->write.handle && param->write.len == 2)
+      else if (status == 30)
       {
-        ESP_LOGI(GATTS_TAG, "aca");
-        uint16_t descr_value = param->write.value[1] << 8 | param->write.value[0];
-        if (descr_value == 0x0001)
-        {
-          if (a_property & ESP_GATT_CHAR_PROP_BIT_NOTIFY)
-          {
-            ESP_LOGI(GATTS_TAG, "notify enable");
-            uint8_t notify_data[15];
-            for (int i = 0; i < sizeof(notify_data); ++i)
-            {
-              notify_data[i] = i % 0xff;
-            }
-            // the size of notify_data[] need less than MTU size
-            esp_ble_gatts_send_indicate(gatts_if, param->write.conn_id, gl_profile_tab[PROFILE_A_APP_ID].char_handle,
-                                        sizeof(notify_data), notify_data, false);
-          }
-        }
-        else if (descr_value == 0x0002)
-        {
-          if (a_property & ESP_GATT_CHAR_PROP_BIT_INDICATE)
-          {
-            ESP_LOGI(GATTS_TAG, "indicate enable");
-            uint8_t indicate_data[15];
-            for (int i = 0; i < sizeof(indicate_data); ++i)
-            {
-              indicate_data[i] = i % 0xff;
-            }
-            // the size of indicate_data[] need less than MTU size
-            esp_ble_gatts_send_indicate(gatts_if, param->write.conn_id, gl_profile_tab[PROFILE_A_APP_ID].char_handle,
-                                        sizeof(indicate_data), indicate_data, true);
-          }
-        }
-        else if (descr_value == 0x0000)
-        {
-          ESP_LOGI(GATTS_TAG, "notify/indicate disable ");
-        }
-        else
-        {
-          ESP_LOGE(GATTS_TAG, "unknown descr value");
-          esp_log_buffer_hex(GATTS_TAG, param->write.value, param->write.len);
-        }
+        ble_continous();
+      }
+      else if (status == 31)
+      {
+        ble_discontinous();
       }
     }
     example_write_event_env(gatts_if, &a_prepare_write_env, param);
@@ -610,6 +667,16 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
     }
   } while (0);
 }
+void send_indicate()
+{
+  ESP_LOGI(GATTS_TAG, "notify enable");
+  uint8_t notify_data = 1;
+  // the size of notify_data[] need less than MTU size
+  esp_ble_gatts_send_indicate(gl_profile_tab[PROFILE_A_APP_ID].gatts_if,
+                              gl_profile_tab[PROFILE_A_APP_ID].conn_id,
+                              gl_profile_tab[PROFILE_A_APP_ID].char_handle,
+                              sizeof(notify_data), &notify_data, false);
+}
 
 void app_main(void)
 {
@@ -675,6 +742,14 @@ void app_main(void)
   if (local_mtu_ret)
   {
     ESP_LOGE(GATTS_TAG, "set local  MTU failed, error code = %x", local_mtu_ret);
+  }
+  config_t config;
+  retrieve_config(&config);
+
+  if (config.status == 31)
+  {
+    ESP_LOGI(GATTS_TAG, "waked up from deep sleep, notifying");
+    ble_discontinous();
   }
 
   return;

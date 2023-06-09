@@ -17,8 +17,10 @@ class Requester(GATTRequester):
         self.wakeup = Event()
 
     def on_notification(self, handle, data):
-        print("- notification on handle: {}\n".format(handle))
-        print(f"{data=}")
+        print("{handle=}, {data=}")
+        if data:
+            packet = self.read_by_handle(READ_HANDLE)
+            print(f"{packet=}")
         self.wakeup.set()
 
 
@@ -50,25 +52,33 @@ def get_config_packet(status, protocol):
     return pack("<2c", status.encode(), protocol.encode())
 
 
+def get_status_protocol_pairs():
+    status_protocol_pairs = []
+    for status in (30, 31):
+        for protocol in range(4):
+            status_protocol_pairs.append(status, str(protocol))
+
+
 def main():
-    status = input("Status: ")
-    protocol = input("Protocol: ")
-    while True:
-        try:
-            if not req.is_connected():
-                req.connect(True)
-                print("connected")
+    for status, protocol in get_status_protocol_pairs():
+        print(f"{status=}, {protocol=}")
+        while True:
+            try:
+                if not req.is_connected():
+                    req.connect(True)
+                    print("connected")
 
-            # write config
-            req.write_by_handle(WRITE_HANDLE, get_config_packet(status, protocol))
-            rec_not = ReceiveNotification(req)
-
-            rec_not.wait_notification()
-            sleep(1)
-        except BTIOException:
-            print("Error de conexión")
-            sleep(1)
-            continue
+                # write config
+                req.write_by_handle(WRITE_HANDLE, get_config_packet(status, protocol))
+                for _ in range(3):
+                    rec_not = ReceiveNotification(req)
+                    rec_not.wait_notification()
+                req.write_by_handle(WRITE_HANDLE, get_config_packet(10, "0"))
+                break
+            except BTIOException:
+                print("Error de conexión")
+                sleep(1)
+                continue
 
 
 if __name__ == "__main__":
