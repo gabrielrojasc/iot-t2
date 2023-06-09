@@ -24,6 +24,15 @@ class Requester(GATTRequester):
             print("no leyendo")
         self.wakeup.set()
 
+    def check_connected(self):
+        if not self.is_connected():
+            try:
+                self.connect(True)
+            except BTIOException:
+                self.check_connected()
+            finally:
+                sleep(1)
+
 
 class ReceiveNotification(object):
     def __init__(self, req):
@@ -71,12 +80,16 @@ def main():
                     print("connected")
 
                 # write config
+                req.check_connected()
                 req.write_by_handle(
                     CHAR_HANDLE, get_config_packet(chr(status), protocol), False
                 )
                 for _ in range(3):
+                    req.check_connected()
                     rec_not = ReceiveNotification(req)
                     rec_not.wait_notification()
+
+                req.check_connected()
                 req.write_by_handle(CHAR_HANDLE, get_config_packet(chr(10), "0"))
                 break
             except BTIOException:
