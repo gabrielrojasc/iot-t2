@@ -26,7 +26,7 @@ def get_status_protocol_pairs():
 class State(Enum):
     DISCONNECTED = "DISCONNECTED"
     CONFIGURATION = "CONFIGURATION"
-    SUSBSCRIBING = "SUSBSCRIBING"
+    SUBSCRIBING = "SUBSCRIBING"
     CONNECTING = "CONNECTING"
     RECONNECTING = "RECONNECTING"
     CONNECTED = "CONNECTED"
@@ -104,17 +104,22 @@ class StateMachine(GATTHelper):
         if not self.client.is_connected:
             try:
                 await self.client.connect()
-                self.state = State.CONNECTED
+                self.state = State.SUBSCRIBING
             except Exception as e:
                 print("Error connecting to device: {}".format(e))
                 self.state = State.RECONNECTING
 
     def configuration_state(self):
         self.write_gatt_char(get_config_packet(self.status, self.protocol))
-        self.state = State.SUSBSCRIBING
+        self.state = State.SUBSCRIBING
 
     def susbcribing_state(self):
-        self.susbscribe_gatt_char(self.notify_callback)
+        try:
+            self.susbscribe_gatt_char(self.notify_callback)
+            self.state = State.CONNECTED
+        except Exception as e:
+            logger.info(f"Error subscribing to device: {e}")
+            self.state = State.RECONNECTING
 
     def connected_state(self):
         if not self.client.is_connected:
