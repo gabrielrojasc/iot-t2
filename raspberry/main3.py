@@ -49,7 +49,7 @@ class GATTHelper:
 
     async def susbscribe_gatt_char_async(self):
         return await self.client.start_notify(
-            self.characteristic_uuid, partial(self.notify_callback, self)
+            self.characteristic_uuid, self.notify_callback
         )
 
 
