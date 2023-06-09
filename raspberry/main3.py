@@ -68,6 +68,7 @@ class StateMachine(GATTHelper):
 
     def start(self):
         while True:
+            logger.info(f"Current state: {self.state}")
             if self.state == State.DISCONNECTED:
                 self.disconnected_state()
             elif self.state == State.CONNECTING:
