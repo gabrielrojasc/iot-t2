@@ -106,7 +106,7 @@ class StateMachine(GATTHelper):
         if not self.client.is_connected:
             try:
                 await self.client.connect()
-                self.state = State.CONNECTED
+                self.state = State.SUBSCRIBING
             except Exception as e:
                 print("Error connecting to device: {}".format(e))
                 self.state = State.RECONNECTING
@@ -115,11 +115,16 @@ class StateMachine(GATTHelper):
         self.write_gatt_char(get_config_packet(self.status, self.protocol))
         self.state = State.CONNECTED
 
-    def connected_state(self):
+    def subscribing_state(self):
         try:
             self.susbscribe_gatt_char(self.notify_callback)
+            self.state = State.CONNECTED
         except Exception as e:
             logger.info(f"Error subscribing to device: {e}")
+            self.state = State.RECONNECTING
+
+    def connected_state(self):
+        if not self.client.is_connected:
             self.state = State.RECONNECTING
 
     def notify_callback(self, sender, data):
