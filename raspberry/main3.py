@@ -19,7 +19,7 @@ def get_status_protocol_pairs():
     return status_protocol_pairs
 
 
-def disconnected_callback(client):
+async def disconnected_callback(client):
     print("reconnecting...")
     client.connect()
 
