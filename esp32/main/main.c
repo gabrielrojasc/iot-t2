@@ -29,6 +29,7 @@ void send_indicate();
 // Global variables for namespace and key
 const char *g_namespace = "my_namespace";
 const char *g_key = "my_key";
+const bool needs_reset = false;
 
 /*
 status:
@@ -401,23 +402,25 @@ void example_exec_write_event_env(prepare_type_env_t *prepare_write_env, esp_ble
 
 void ble_continous()
 {
-  config_t config;
-  retrieve_config(&config);
-  if (config.status == 10)
+  while (true)
   {
-    return;
-  }
+    config_t config;
+    retrieve_config(&config);
+    if (config.status == 10)
+    {
+      return;
+    }
 
-  char *payload = mensaje(config.protocol, (char)config.status);
-  int len = sizeof(payload);
-  esp_err_t err = esp_ble_gatts_set_attr_value(gl_profile_tab[PROFILE_A_APP_ID].char_handle, len, (uint8_t *)payload);
-  if (err)
-  {
-    ESP_LOGE(GATTS_TAG, "gatts set attr value failed, error code = %x", err);
+    char *payload = mensaje(config.protocol, (char)config.status);
+    int len = sizeof(payload);
+    esp_err_t err = esp_ble_gatts_set_attr_value(gl_profile_tab[PROFILE_A_APP_ID].char_handle, len, (uint8_t *)payload);
+    if (err)
+    {
+      ESP_LOGE(GATTS_TAG, "gatts set attr value failed, error code = %x", err);
+    }
+    send_indicate();
+    vTaskDelay(2000 / portTICK_PERIOD_MS);
   }
-  send_indicate();
-  vTaskDelay(2000 / portTICK_PERIOD_MS);
-  ble_continous();
 }
 void ble_discontinous()
 {
@@ -523,7 +526,11 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
             // the size of notify_data[] need less than MTU size
             esp_ble_gatts_send_indicate(gatts_if, param->write.conn_id, gl_profile_tab[PROFILE_A_APP_ID].char_handle,
                                         sizeof(notify_data), notify_data, false);
-            esp_restart();
+            if (needs_reset)
+            {
+              ESP_LOGI(GATTS_TAG, "Resetting");
+              esp_restart();
+            }
           }
         }
         else if (descr_value == 0x0002)
@@ -554,6 +561,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
           config.protocol = protocol;
           ESP_LOGI("CHANGE_CONFIG", "status: %d, protocol: %c", status, protocol);
           store_config(&config);
+          needs_reset = true;
         }
         else
         {
