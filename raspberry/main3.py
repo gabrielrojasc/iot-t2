@@ -67,11 +67,12 @@ class StateMachine:
                 try:
                     await self.client.connect()
                     self.state = "connected"
-                    break
+                    return True
                 except Exception as e:
                     print(f"Reconnection failed: {e}")
                     await asyncio.sleep(self.reconnect_delay)
-        return True
+            else:
+                return True
 
 
 if __name__ == "__main__":
