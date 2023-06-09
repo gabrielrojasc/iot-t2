@@ -67,20 +67,17 @@ class StateMachine:
                 print("Disconnected.")
                 self.state = "disconnected"
 
-    async def check_connection(self):
+    async def check_connection(self) -> bool:
         """Check if the client is still connected."""
         if not self.client.is_connected:
             while True:
                 try:
                     await self.client.connect()
-                    await self.client.is_connected
                     self.state = "connected"
+                    return await self.client.is_connected
                 except Exception as e:
-                    print(
-                        f"Reconnection failed: {e}, retrying in {self.reconnect_delay} "
-                        f"seconds..."
-                    )
-                    asyncio.sleep(self.reconnect_delay)
+                    print(f"Reconnection failed: {e}")
+        return True
 
 
 if __name__ == "__main__":
