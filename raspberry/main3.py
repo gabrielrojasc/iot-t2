@@ -23,8 +23,8 @@ class StateMachine:
     def __init__(self):
         self.state = "disconnected"
         self.loop = asyncio.get_event_loop()
-        self.device_address = "00:11:22:33:44:55"  # Replace with your device address
-        self.characteristic_uuid = "00002a37-0000-1000-8000-00805f9b34fb"  # Replace with your characteristic UUID
+        self.device_address = "4C:EB:D6:62:18:3A"
+        self.characteristic_uuid = "0000FF01-0000-1000-8000-00805f9b34fb"
         self.reconnect_delay = 5  # Delay in seconds before attempting reconnection
 
     async def start(self):
