@@ -485,7 +485,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
     retrieve_config(&config);
     if (config.status == 31)
     {
-      ble_discontinous();
+      // ble_discontinous();
       // TODO: Dejar el timer del sleep en un minuto
       int discontinous_time = 2 * 1000 * 1000; // 2s
       esp_sleep_enable_timer_wakeup(discontinous_time);
