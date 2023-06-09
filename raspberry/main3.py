@@ -3,6 +3,7 @@ import logging
 from struct import pack
 from bleak import BleakClient
 from enum import Enum
+from time import sleep
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("BLE")
@@ -75,6 +76,7 @@ class StateMachine(GATTHelper):
                 break
             method = getattr(self, f"{self.state.value.lower()}_state")
             method()
+            sleep(1)
 
     def disconnected_state(self):
         self.loop.run_until_complete(self.disconnected_state_async())
@@ -104,29 +106,24 @@ class StateMachine(GATTHelper):
         if not self.client.is_connected:
             try:
                 await self.client.connect()
-                self.state = State.SUBSCRIBING
+                self.state = State.CONNECTED
             except Exception as e:
                 print("Error connecting to device: {}".format(e))
                 self.state = State.RECONNECTING
 
     def configuration_state(self):
         self.write_gatt_char(get_config_packet(self.status, self.protocol))
-        self.state = State.SUBSCRIBING
+        self.state = State.CONNECTED
 
-    def subscribing_state(self):
+    def connected_state(self):
         try:
             self.susbscribe_gatt_char(self.notify_callback)
-            self.state = State.CONNECTED
         except Exception as e:
             logger.info(f"Error subscribing to device: {e}")
             self.state = State.RECONNECTING
 
-    def connected_state(self):
-        if not self.client.is_connected:
-            self.state = State.RECONNECTING
-
     def notify_callback(self, sender, data):
-        logger.info(f"Received data: {data}")
+        logger.info(f"{sender=}, {data=}")
         # data = self.read_gatt_char()
         self.packets_received += 1
         if self.packets_received >= 3:
