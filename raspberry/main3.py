@@ -120,4 +120,4 @@ class StateMachine(GATTHelper):
 
 if __name__ == "__main__":
     sm = StateMachine()
-    sm.run()
+    sm.start()
