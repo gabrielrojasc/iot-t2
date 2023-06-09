@@ -125,6 +125,8 @@ class StateMachine(GATTHelper):
     def connected_state(self):
         if not self.client.is_connected:
             self.state = State.RECONNECTING
+        else:
+            sleep(1)
 
     def notify_callback(self, sender, data):
         logger.info(f"{sender=}, {data=}")
