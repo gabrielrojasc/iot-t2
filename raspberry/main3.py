@@ -54,7 +54,6 @@ class GATTHelper:
 
     async def susbscribe_gatt_char_async(self, notify_callback):
         await self.client.start_notify(self.characteristic_uuid, notify_callback)
-        await asyncio.sleep(1)
 
 
 class StateMachine(GATTHelper):
@@ -76,7 +75,6 @@ class StateMachine(GATTHelper):
                 break
             method = getattr(self, f"{self.state.value.lower()}_state")
             method()
-            sleep(1)
 
     def disconnected_state(self):
         self.loop.run_until_complete(self.disconnected_state_async())
