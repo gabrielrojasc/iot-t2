@@ -3,7 +3,6 @@ import logging
 from struct import pack
 from bleak import BleakClient
 from enum import Enum
-from time import sleep
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("BLE")
@@ -76,7 +75,6 @@ class StateMachine(GATTHelper):
                 break
             method = getattr(self, f"{self.state.value.lower()}_state")
             method()
-            sleep(1)
 
     def disconnected_state(self):
         self.loop.run_until_complete(self.disconnected_state_async())
@@ -113,7 +111,7 @@ class StateMachine(GATTHelper):
 
     def configuration_state(self):
         self.write_gatt_char(get_config_packet(self.status, self.protocol))
-        self.state = State.SUBSCRIBING
+        self.state = State.RECONNECTING
 
     def subscribing_state(self):
         try:
