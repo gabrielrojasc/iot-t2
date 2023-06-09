@@ -7,8 +7,7 @@ from gattlib import GATTRequester, BTIOException
 DEVICE_ADDRESS = "4C:EB:D6:62:18:3A"
 SERVICE_UUID = "000000FF-0000-1000-8000-00805f9b34fb"
 CHARACTERISTIC_UUID = "0000FF01-0000-1000-8000-00805f9b34fb"
-READ_HANDLE = 42
-WRITE_HANDLE = 43
+CHAR_HANDLE = 42
 
 
 class Requester(GATTRequester):
@@ -71,16 +70,16 @@ def main():
 
                 # write config
                 req.write_by_handle(
-                    WRITE_HANDLE, get_config_packet(chr(status), protocol)
+                    CHAR_HANDLE, get_config_packet(chr(status), protocol)
                 )
                 for _ in range(3):
                     rec_not = ReceiveNotification(req)
                     rec_not.wait_notification()
-                req.write_by_handle(WRITE_HANDLE, get_config_packet(chr(10), "0"))
+                req.write_by_handle(CHAR_HANDLE, get_config_packet(chr(10), "0"))
                 break
             except BTIOException:
                 print("Error de conexión")
-                sleep(1)
+                sleep(1.5)
                 continue
 
 
