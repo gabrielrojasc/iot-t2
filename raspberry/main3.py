@@ -1,11 +1,19 @@
 import asyncio
-from bleak import BleakScanner, BleakClient
-from time import sleep
-from struct import pack
 import logging
+from struct import pack
+from bleak import BleakClient
+from functools import partial
+from console_handler import CustomFormatter
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("BLE")
+# create console handler with a higher log level
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+
+ch.setFormatter(CustomFormatter())
+
+logger.addHandler(ch)
 
 DEVICE_ADDRESS = "4C:EB:D6:62:18:3A"
 CHARACTERISTIC_UUID = "0000FF01-0000-1000-8000-00805f9b34fb"
@@ -36,6 +44,14 @@ class GATTHelper:
     async def write_gatt_char_async(self, data):
         return await self.client.write_gatt_char(self.characteristic_uuid, data)
 
+    def susbscribe_gatt_char(self):
+        return self.loop.run_until_complete(self.susbscribe_gatt_char_async())
+
+    async def susbscribe_gatt_char_async(self):
+        return await self.client.start_notify(
+            self.characteristic_uuid, partial(self.notify_callback, self)
+        )
+
 
 class StateMachine(GATTHelper):
     def __init__(self):
@@ -44,6 +60,7 @@ class StateMachine(GATTHelper):
         self.device_address = "4C:EB:D6:62:18:3A"
         self.characteristic_uuid = "0000FF01-0000-1000-8000-00805f9b34fb"
         self.reconnect_delay = 5  # Delay in seconds before attempting reconnection
+        self.packets_received = 0
 
     def start(self):
         while True:
@@ -75,12 +92,23 @@ class StateMachine(GATTHelper):
                 self.state = "disconnected"
 
     def connected_state(self):
-        data = self.read_gatt_char()
-        logger.info(f"Received data: {data}")
-        self.write_gatt_char(get_config_packet(31, "0"))
+        # write config
+        self.write_gatt_char(get_config_packet(30, "0"))
+
+        self.susbscribe_gatt_char()
 
     def notify_callback(self, sender, data):
-        ...
+        data = self.read_gatt_char()
+        logger.info(f"Received data: {data}")
+        self.packets_received += 1
+        if self.packets_received >= 3:
+            self.disconnect()
+
+    def disconnet(self):
+        self.write_gatt_char(get_config_packet(10, "0"))
+        self.packets_received = 0
+        self.state = "disconnected"
+        self.client.disconnect()
 
 
 if __name__ == "__main__":

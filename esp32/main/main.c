@@ -399,7 +399,26 @@ void example_exec_write_event_env(prepare_type_env_t *prepare_write_env, esp_ble
   prepare_write_env->prepare_len = 0;
 }
 
-void ble_continous() {}
+void ble_continous()
+{
+  config_t config;
+  retrieve_config(&config);
+  if (config.status == 10)
+  {
+    return;
+  }
+
+  char *payload = mensaje(config.protocol, (char)config.status);
+  int len = sizeof(payload);
+  esp_err_t err = esp_ble_gatts_set_attr_value(gl_profile_tab[PROFILE_A_APP_ID].char_handle, len, (uint8_t *)payload);
+  if (err)
+  {
+    ESP_LOGE(GATTS_TAG, "gatts set attr value failed, error code = %x", err);
+  }
+  send_indicate();
+  vTaskDelay(2000 / portTICK_PERIOD_MS);
+  ble_continous();
+}
 void ble_discontinous()
 {
   config_t config;
@@ -726,7 +745,11 @@ void app_main(void)
   config_t config;
   retrieve_config(&config);
 
-  if (config.status == 31)
+  if (config.status == 30)
+  {
+    ble_continous();
+  }
+  else if (config.status == 31)
   {
     ESP_LOGI(GATTS_TAG, "waked up from deep sleep, notifying");
     ble_discontinous();
