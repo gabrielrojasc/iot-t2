@@ -38,19 +38,17 @@ class GATTHelper:
 
     def susbscribe_gatt_char(self, notify_callback):
         logger.info(f"Subscribing to {self.characteristic_uuid}")
-        return self.loop.run_until_complete(
-            self.susbscribe_gatt_char_async(notify_callback)
-        )
+        self.loop.run_until_complete(self.susbscribe_gatt_char_async(notify_callback))
 
     async def susbscribe_gatt_char_async(self, notify_callback):
-        return await self.client.start_notify(self.characteristic_uuid, notify_callback)
+        await self.client.start_notify(self.characteristic_uuid, notify_callback)
+        asyncio.sleep(1)
 
 
 class StateMachine(GATTHelper):
     def __init__(self):
         self.state = "disconnected"
-        self.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(self.loop)
+        self.loop = asyncio.get_event_loop()
         self.device_address = "4C:EB:D6:62:18:3A"
         self.characteristic_uuid = "0000FF01-0000-1000-8000-00805f9b34fb"
         self.reconnect_delay = 5  # Delay in seconds before attempting reconnection
