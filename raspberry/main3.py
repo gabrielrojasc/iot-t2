@@ -21,7 +21,7 @@ def get_status_protocol_pairs():
 
 async def disconnected_callback(client):
     print("reconnecting...")
-    client.connect()
+    await client.connect()
 
 
 class Client(BleakClient):
