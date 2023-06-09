@@ -508,6 +508,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
       ESP_LOGI("CONFIG_CHANGE", "status: %d, protocol: %c", status, protocol);
       store_config(&config);
       example_write_event_env(gatts_if, &a_prepare_write_env, param);
+      vTaskDelay(5000 / portTICK_PERIOD_MS);
       if (status == 10)
       {
         esp_restart();
@@ -523,10 +524,6 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         esp_sleep_enable_timer_wakeup(discontinous_time);
         esp_deep_sleep_start();
       }
-    }
-    else
-    {
-      example_write_event_env(gatts_if, &a_prepare_write_env, param);
     }
     break;
   }

@@ -2,6 +2,9 @@ import asyncio
 from bleak import BleakScanner, BleakClient
 from time import sleep
 from struct import pack
+import logging
+
+logger = logging.getLogger(__name__)
 
 DEVICE_ADDRESS = "4C:EB:D6:62:18:3A"
 CHARACTERISTIC_UUID = "0000FF01-0000-1000-8000-00805f9b34fb"
@@ -37,13 +40,18 @@ class StateMachine:
                 await self.connected_state()
 
     async def disconnected_state(self):
-        if not self.device_address:
-            print("Device address is not defined.")
-            return
-
-        print(f"Disconnected. Connecting to device: {self.device_address}")
+        logger.info(f"Disconnected. Connecting to device: {self.device_address}")
         self.client = BleakClient(self.device_address)
         self.state = "connecting"
+
+    async def check_connection(self) -> bool:
+        """Check if the client is still connected."""
+        if not self.client.is_connected:
+            try:
+                await self.client.connect()
+                self.state = "connected"
+            except Exception as e:
+                self.state = "disconnected"
 
     async def connected_state(self):
         while self.state == "connected":
@@ -53,27 +61,7 @@ class StateMachine:
             )
             await self.check_connection()
             data = await self.client.read_gatt_char(self.characteristic_uuid)
-            if data:
-                print(f"Received data: {data}")
-                await self.client.disconnect()
-                print("Disconnected.")
-                self.state = "disconnected"
-
-    async def check_connection(self) -> bool:
-        """Check if the client is still connected."""
-        while True:
-            if not self.client.is_connected:
-                try:
-                    await self.client.connect()
-                    self.state = "connected"
-                    await asyncio.sleep(1)
-                    return True
-                except Exception as e:
-                    print(f"Reconnection failed: {e}")
-                    await asyncio.sleep(self.reconnect_delay)
-            else:
-                await asyncio.sleep(1)
-                return True
+            logger.info(f"Received data: {data}")
 
 
 if __name__ == "__main__":
