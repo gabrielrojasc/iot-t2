@@ -28,14 +28,15 @@ async def main():
     status_protocol_pairs = get_status_protocol_pairs()
     for status, protocol in status_protocol_pairs:
         print(f"status: {status}, protocol: {protocol}")
-        async with BleakClient(DEVICE_ADDRESS, on_disconnect) as client:
-            client.connect()
-            config_packet = get_config_packet(status, protocol)
-            client.write_gatt_char(CHARACTERISTIC_UUID, config_packet)
-            sleep(1)
-            packet = client.read_gatt_char(CHARACTERISTIC_UUID)
-            print(f"{packet=}")
+        client = BleakClient(DEVICE_ADDRESS, on_disconnect)
+        await client.connect()
+        config_packet = get_config_packet(status, protocol)
+        client.write_gatt_char(CHARACTERISTIC_UUID, config_packet)
+        sleep(1)
+        packet = client.read_gatt_char(CHARACTERISTIC_UUID)
+        print(f"{packet=}")
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
