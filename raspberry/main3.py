@@ -129,7 +129,7 @@ class StateMachine(GATTHelper):
             self.go_to_sleep(1)
 
     def go_to_sleep(self, seconds):
-        self.loop.run_until_complete(self.go_to_sleep_async(seconds))
+        asyncio.new_event_loop().run_until_complete(self.go_to_sleep_async(seconds))
 
     async def go_to_sleep_async(self, seconds):
         await asyncio.sleep(seconds)
