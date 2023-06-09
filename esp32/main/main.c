@@ -485,7 +485,6 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
     retrieve_config(&config);
     if (config.status == 31)
     {
-      // ble_discontinous();
       // TODO: Dejar el timer del sleep en un minuto
       int discontinous_time = 2 * 1000 * 1000; // 2s
       esp_sleep_enable_timer_wakeup(discontinous_time);
@@ -507,24 +506,8 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
       config.protocol = protocol;
       ESP_LOGI("CONFIG_CHANGE", "status: %d, protocol: %c", status, protocol);
       store_config(&config);
-      example_write_event_env(gatts_if, &a_prepare_write_env, param);
-      vTaskDelay(5000 / portTICK_PERIOD_MS);
-      if (status == 10)
-      {
-        esp_restart();
-      }
-      else if (status == 30)
-      {
-        ble_continous();
-      }
-      else if (status == 31)
-      {
-        // ble_discontinous();
-        int discontinous_time = 2 * 1000 * 1000; // 2s
-        esp_sleep_enable_timer_wakeup(discontinous_time);
-        esp_deep_sleep_start();
-      }
     }
+    example_write_event_env(gatts_if, &a_prepare_write_env, param);
     break;
   }
   case ESP_GATTS_EXEC_WRITE_EVT:
