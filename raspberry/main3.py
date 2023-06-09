@@ -2,6 +2,7 @@ import asyncio
 import logging
 from struct import pack
 from bleak import BleakClient
+from enum import Enum
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("BLE")
@@ -11,7 +12,7 @@ CHARACTERISTIC_UUID = "0000FF01-0000-1000-8000-00805f9b34fb"
 
 
 def get_config_packet(status, protocol):
-    return pack("<2c", chr(status).encode(), protocol.encode())
+    return pack("<2B2c", 0, 0, chr(status).encode(), protocol.encode())
 
 
 def get_status_protocol_pairs():
@@ -20,6 +21,13 @@ def get_status_protocol_pairs():
         for protocol in range(4):
             status_protocol_pairs.append((status, str(protocol)))
     return status_protocol_pairs
+
+
+class State(Enum):
+    DISCONNECTED = 0
+    CONFIGURATION = 1
+    CONNECTING = 2
+    CONNECTED = 3
 
 
 class GATTHelper:
@@ -47,7 +55,7 @@ class GATTHelper:
 
 class StateMachine(GATTHelper):
     def __init__(self):
-        self.state = "disconnected"
+        self.state = State.DISCONNECTED
         self.loop = asyncio.get_event_loop()
         self.device_address = "4C:EB:D6:62:18:3A"
         self.characteristic_uuid = "0000FF01-0000-1000-8000-00805f9b34fb"
@@ -57,11 +65,13 @@ class StateMachine(GATTHelper):
 
     def start(self):
         while True:
-            if self.state == "disconnected":
+            if self.state == State.DISCONNECTED:
                 self.disconnected_state()
-            elif self.state == "connecting":
+            elif self.state == State.CONFIGURATION:
+                self.configuration_state()
+            elif self.state == State.CONNECTING:
                 self.check_connection()
-            elif self.state == "connected":
+            elif self.state == State.CONNECTED:
                 self.connected_state()
 
     def disconnected_state(self):
@@ -70,7 +80,7 @@ class StateMachine(GATTHelper):
     async def disconnected_state_async(self):
         logger.info(f"Disconnected. Connecting to device: {self.device_address}")
         self.client = BleakClient(self.device_address)
-        self.state = "connecting"
+        self.state = State.CONNECTING
 
     def check_connection(self):
         self.loop.run_until_complete(self.check_connection_async())
@@ -80,16 +90,19 @@ class StateMachine(GATTHelper):
         if not self.client.is_connected:
             try:
                 await self.client.connect()
-                self.state = "connected"
+                self.state = State.CONFIGURATION
             except Exception as e:
-                self.state = "disconnected"
+                print("Error connecting to device: {}".format(e))
+                self.state = State.DISCONNECTED
+
+    def configuration_state(self):
+        # write config and subscribe
+        self.write_gatt_char(get_config_packet(30, "0"))
+        self.susbscribe_gatt_char(self.notify_callback)
+        self.first_connection = False
 
     def connected_state(self):
-        if self.first_connection:
-            # write config and subscribe
-            self.write_gatt_char(get_config_packet(30, "0"))
-            self.susbscribe_gatt_char(self.notify_callback)
-            self.first_connection = False
+        ...
 
     def notify_callback(self, sender, data):
         data = self.read_gatt_char()
@@ -101,11 +114,10 @@ class StateMachine(GATTHelper):
     def disconnet(self):
         self.write_gatt_char(get_config_packet(10, "0"))
         self.packets_received = 0
-        self.state = "disconnected"
-        self.first_connection = True
+        self.state = State.DISCONNECTED
         self.client.disconnect()
 
 
 if __name__ == "__main__":
     sm = StateMachine()
-    sm.loop.run_until_complete(sm.start())
+    sm.run()
