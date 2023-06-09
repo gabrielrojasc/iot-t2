@@ -8,7 +8,7 @@ CHARACTERISTIC_UUID = "0000FF01-0000-1000-8000-00805f9b34fb"
 
 
 def get_config_packet(status, protocol):
-    return pack("<2c", status.encode(), protocol.encode())
+    return pack("<2c", chr(status).encode(), protocol.encode())
 
 
 def get_status_protocol_pairs():
