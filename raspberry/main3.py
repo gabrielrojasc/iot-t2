@@ -47,6 +47,7 @@ class StateMachine:
             self.state = "connecting"
         except Exception as e:
             print(f"Connection failed: {e}")
+            await asyncio.sleep(1)  # Wait for a while before retrying
 
     async def connecting_state(self):
         if await self.client.connect():
