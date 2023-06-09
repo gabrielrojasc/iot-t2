@@ -23,7 +23,21 @@ def get_status_protocol_pairs():
     return status_protocol_pairs
 
 
-class StateMachine:
+class GATTHelper:
+    def read_gatt_char(self):
+        self.loop.run_until_complete(self.read_gatt_char_async())
+
+    async def read_gatt_char_async(self):
+        return await self.client.read_gatt_char(self.characteristic_uuid)
+
+    def write_gatt_char(self, data):
+        self.loop.run_until_complete(self.write_gatt_char_async(data))
+
+    async def write_gatt_char_async(self, data):
+        return await self.client.write_gatt_char(self.characteristic_uuid, data)
+
+
+class StateMachine(GATTHelper):
     def __init__(self):
         self.state = "disconnected"
         self.loop = asyncio.get_event_loop()
@@ -31,21 +45,27 @@ class StateMachine:
         self.characteristic_uuid = "0000FF01-0000-1000-8000-00805f9b34fb"
         self.reconnect_delay = 5  # Delay in seconds before attempting reconnection
 
-    async def start(self):
+    def start(self):
         while True:
             if self.state == "disconnected":
-                await self.disconnected_state()
+                self.disconnected_state()
             elif self.state == "connecting":
-                await self.check_connection()
+                self.check_connection()
             elif self.state == "connected":
-                await self.connected_state()
+                self.connected_state()
 
-    async def disconnected_state(self):
+    def disconnected_state(self):
+        self.loop.run_until_complete(self.disconnected_state_async())
+
+    async def disconnected_state_async(self):
         logger.info(f"Disconnected. Connecting to device: {self.device_address}")
         self.client = BleakClient(self.device_address)
         self.state = "connecting"
 
-    async def check_connection(self) -> bool:
+    def check_connection(self):
+        self.loop.run_until_complete(self._check_connection())
+
+    async def check_connection_async(self) -> bool:
         """Check if the client is still connected."""
         if not self.client.is_connected:
             try:
@@ -54,14 +74,13 @@ class StateMachine:
             except Exception as e:
                 self.state = "disconnected"
 
-    async def connected_state(self):
-        while self.state == "connected":
-            data = await self.client.read_gatt_char(self.characteristic_uuid)
-            logger.info(f"Received data: {data}")
-            # set config
-            await self.client.write_gatt_char(
-                self.characteristic_uuid, get_config_packet(31, "0")
-            )
+    def connected_state(self):
+        data = self.read_gatt_char()
+        logger.info(f"Received data: {data}")
+        self.write_gatt_char(get_config_packet(31, "0"))
+
+    def notify_callback(self, sender, data):
+        ...
 
 
 if __name__ == "__main__":

@@ -481,16 +481,6 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
     esp_ble_gatts_send_response(gatts_if, param->read.conn_id, param->read.trans_id,
                                 ESP_GATT_OK, &rsp);
 
-    // vTaskDelay(2000 / portTICK_PERIOD_MS);
-    // config_t config;
-    // retrieve_config(&config);
-    // if (config.status == 31)
-    // {
-    //   // TODO: Dejar el timer del sleep en un minuto
-    //   int discontinous_time = 2 * 1000 * 1000; // 2s
-    //   esp_sleep_enable_timer_wakeup(discontinous_time);
-    //   esp_deep_sleep_start();
-    // }
     break;
   }
   case ESP_GATTS_WRITE_EVT:
