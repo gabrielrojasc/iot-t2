@@ -70,6 +70,7 @@ class StateMachine:
                     break
                 except Exception as e:
                     print(f"Reconnection failed: {e}")
+                    await asyncio.sleep(self.reconnect_delay)
         return True
 
 
