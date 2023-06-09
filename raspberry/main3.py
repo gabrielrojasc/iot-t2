@@ -47,19 +47,12 @@ class StateMachine:
 
     async def connected_state(self):
         while self.state == "connected":
+            await self.check_connection()
             # Data sending/receiving operations go here
             await self.client.write_gatt_char(
                 self.characteristic_uuid, get_config_packet(31, "0")
             )
-
-            # Example: Perform periodic connection check
-            if not await self.check_connection():
-                print("Connection lost. Reconnecting...")
-                self.state = "connecting"
-                await asyncio.sleep(self.reconnect_delay)
-                break
-
-            # Example: Disconnect after receiving data
+            await self.check_connection()
             data = await self.client.read_gatt_char(self.characteristic_uuid)
             if data:
                 print(f"Received data: {data}")
