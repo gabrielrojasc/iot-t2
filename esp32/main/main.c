@@ -517,6 +517,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
       if (gl_profile_tab[PROFILE_A_APP_ID].descr_handle == param->write.handle && param->write.len == 2)
       {
         uint16_t descr_value = param->write.value[1] << 8 | param->write.value[0];
+        ESP_LOGE(GATTS_TAG, "descr_value = %x", descr_value);
         if (descr_value == 0x0001)
         {
           if (a_property & ESP_GATT_CHAR_PROP_BIT_NOTIFY)
