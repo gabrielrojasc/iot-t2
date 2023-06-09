@@ -56,7 +56,7 @@ def get_status_protocol_pairs():
     status_protocol_pairs = []
     for status in (30, 31):
         for protocol in range(4):
-            status_protocol_pairs.append(status, str(protocol))
+            status_protocol_pairs.append((status, str(protocol)))
 
 
 def main():
