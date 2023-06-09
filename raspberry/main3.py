@@ -25,13 +25,13 @@ def get_status_protocol_pairs():
 
 class GATTHelper:
     def read_gatt_char(self):
-        self.loop.run_until_complete(self.read_gatt_char_async())
+        return self.loop.run_until_complete(self.read_gatt_char_async())
 
     async def read_gatt_char_async(self):
         return await self.client.read_gatt_char(self.characteristic_uuid)
 
     def write_gatt_char(self, data):
-        self.loop.run_until_complete(self.write_gatt_char_async(data))
+        return self.loop.run_until_complete(self.write_gatt_char_async(data))
 
     async def write_gatt_char_async(self, data):
         return await self.client.write_gatt_char(self.characteristic_uuid, data)
