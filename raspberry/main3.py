@@ -116,6 +116,7 @@ class StateMachine(GATTHelper):
     def configuration_state(self):
         try:
             self.write_gatt_char(get_config_packet(self.status, self.protocol))
+            self.state = State.CONNECTED
         except Exception as e:
             logger.info(f"Error writing to device: {e}")
             self.state = State.RECONNECTING
