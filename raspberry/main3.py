@@ -63,7 +63,7 @@ class StateMachine(GATTHelper):
         self.state = "connecting"
 
     def check_connection(self):
-        self.loop.run_until_complete(self._check_connection())
+        self.loop.run_until_complete(self.check_connection_async())
 
     async def check_connection_async(self) -> bool:
         """Check if the client is still connected."""
