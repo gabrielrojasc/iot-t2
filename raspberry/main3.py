@@ -3,17 +3,9 @@ import logging
 from struct import pack
 from bleak import BleakClient
 from functools import partial
-from console_handler import CustomFormatter
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("BLE")
-# create console handler with a higher log level
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
-
-ch.setFormatter(CustomFormatter())
-
-logger.addHandler(ch)
 
 DEVICE_ADDRESS = "4C:EB:D6:62:18:3A"
 CHARACTERISTIC_UUID = "0000FF01-0000-1000-8000-00805f9b34fb"
