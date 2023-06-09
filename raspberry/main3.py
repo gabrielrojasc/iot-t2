@@ -108,8 +108,6 @@ class StateMachine(GATTHelper):
             except Exception as e:
                 print("Error connecting to device: {}".format(e))
                 self.state = State.RECONNECTING
-        else:
-            self.state = State.SUBSCRIBING
 
     def configuration_state(self):
         self.write_gatt_char(get_config_packet(self.status, self.protocol))
@@ -125,7 +123,16 @@ class StateMachine(GATTHelper):
             self.state = State.RECONNECTING
 
     def connected_state(self):
-        self.state = State.RECONNECTING
+        if not self.client.is_connected:
+            self.state = State.RECONNECTING
+        else:
+            self.go_to_sleep(1)
+
+    def go_to_sleep(self, seconds):
+        self.loop.run_until_complete(self.go_to_sleep_async(seconds))
+
+    async def go_to_sleep_async(self, seconds):
+        await asyncio.sleep(seconds)
 
     def notify_callback(self, sender, data):
         logger.info(f"{sender=}, {data=}")
