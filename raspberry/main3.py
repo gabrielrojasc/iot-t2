@@ -38,7 +38,7 @@ async def main():
     for status, protocol in status_protocol_pairs:
         print(f"status: {status}, protocol: {protocol}")
         client = Client(
-            DEVICE_ADDRESS, disconnected_callback=disconnected_callback, timeout=5
+            DEVICE_ADDRESS, disconnected_callback=disconnected_callback, timeout=1
         )
         await client.connect()
         config_packet = get_config_packet(status, protocol)
