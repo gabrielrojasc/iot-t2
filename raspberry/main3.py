@@ -54,7 +54,7 @@ class GATTHelper:
 
     async def susbscribe_gatt_char_async(self, notify_callback):
         await self.client.start_notify(self.characteristic_uuid, notify_callback)
-        asyncio.sleep(1)
+        await asyncio.sleep(1)
 
 
 class StateMachine(GATTHelper):
