@@ -2,7 +2,6 @@ import asyncio
 import logging
 from struct import pack
 from bleak import BleakClient
-from functools import partial
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("BLE")
@@ -31,12 +30,14 @@ class GATTHelper:
         return await self.client.read_gatt_char(self.characteristic_uuid)
 
     def write_gatt_char(self, data):
+        logger.info(f"Writing {data} to {self.characteristic_uuid}")
         return self.loop.run_until_complete(self.write_gatt_char_async(data))
 
     async def write_gatt_char_async(self, data):
         return await self.client.write_gatt_char(self.characteristic_uuid, data)
 
     def susbscribe_gatt_char(self):
+        logget.info(f"Subscribing to {self.characteristic_uuid}")
         return self.loop.run_until_complete(self.susbscribe_gatt_char_async())
 
     async def susbscribe_gatt_char_async(self):
