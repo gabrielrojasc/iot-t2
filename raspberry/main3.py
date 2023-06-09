@@ -29,6 +29,7 @@ class State(Enum):
     CONNECTING = 2
     RECONNECTING = 3
     CONNECTED = 4
+    FINISHED = 5
 
 
 class GATTHelper:
@@ -79,6 +80,8 @@ class StateMachine(GATTHelper):
                 self.reconnecting_state()
             elif self.state == State.CONNECTED:
                 self.connected_state()
+            elif self.state == State.FINISHED:
+                break
 
     def disconnected_state(self):
         self.loop.run_until_complete(self.disconnected_state_async())
@@ -114,28 +117,29 @@ class StateMachine(GATTHelper):
                 self.state = State.RECONNECTING
 
     def configuration_state(self):
-        try:
-            self.write_gatt_char(get_config_packet(self.status, self.protocol))
-            self.state = State.CONNECTED
-        except Exception as e:
-            logger.info(f"Error writing to device: {e}")
-            self.state = State.RECONNECTING
+        self.write_gatt_char(get_config_packet(self.status, self.protocol))
+        self.susbscribe_gatt_char(self.notify_callback)
+        self.state = State.RECONNECTING
 
     def connected_state(self):
-        self.susbscribe_gatt_char(self.notify_callback)
+        if not self.client.is_connected:
+            self.state = State.RECONNECTING
 
     def notify_callback(self, sender, data):
-        data = self.read_gatt_char()
         logger.info(f"Received data: {data}")
+        # data = self.read_gatt_char()
         self.packets_received += 1
         if self.packets_received >= 3:
-            self.disconnect()
+            self.loop.run_until_complete(self.disconnect())
 
-    def disconnet(self):
-        self.write_gatt_char(get_config_packet(10, "0"))
+    async def disconnect(self):
+        self.write_gatt_char_wait_for_config()
         self.packets_received = 0
-        self.state = State.DISCONNECTED
-        self.client.disconnect()
+        self.state = State.FINISHED
+        await self.client.disconnect()
+
+    def write_gatt_char_wait_for_config(self):
+        self.write_gatt_char(get_config_packet(10, "0"))
 
 
 if __name__ == "__main__":
