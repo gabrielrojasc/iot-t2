@@ -48,7 +48,6 @@ class StateMachine:
     async def connected_state(self):
         while self.state == "connected":
             await self.check_connection()
-            # Data sending/receiving operations go here
             await self.client.write_gatt_char(
                 self.characteristic_uuid, get_config_packet(31, "0")
             )
@@ -67,11 +66,13 @@ class StateMachine:
                 try:
                     await self.client.connect()
                     self.state = "connected"
+                    await asyncio.sleep(1)
                     return True
                 except Exception as e:
                     print(f"Reconnection failed: {e}")
                     await asyncio.sleep(self.reconnect_delay)
             else:
+                await asyncio.sleep(1)
                 return True
 
 
