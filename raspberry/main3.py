@@ -48,7 +48,7 @@ class StateMachine:
     async def connected_state(self):
         while self.state == "connected":
             # Data sending/receiving operations go here
-            self.client.write_gatt_char(
+            await self.client.write_gatt_char(
                 self.characteristic_uuid, get_config_packet(31, "0")
             )
 
