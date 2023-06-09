@@ -113,7 +113,7 @@ class StateMachine(GATTHelper):
         self.write_gatt_char(get_config_packet(self.status, self.protocol))
         self.state = State.SUBSCRIBING
 
-    def subcribing_state(self):
+    def subscribing_state(self):
         try:
             self.susbscribe_gatt_char(self.notify_callback)
             self.state = State.CONNECTED
