@@ -16,7 +16,7 @@ class Requester(GATTRequester):
         self.wakeup = Event()
 
     def on_notification(self, handle, data):
-        print("{handle=}, {data=}")
+        print(f"{handle=}, {data=}")
         if data:
             packet = self.read_by_handle(handle)
             print(f"{packet=}")
