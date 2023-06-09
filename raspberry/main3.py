@@ -27,7 +27,7 @@ class State(Enum):
     DISCONNECTED = 0
     CONFIGURATION = 1
     CONNECTING = 2
-    RECONNECTIONG = 3
+    RECONNECTING = 3
     CONNECTED = 4
 
 
@@ -117,7 +117,7 @@ class StateMachine(GATTHelper):
             self.write_gatt_char(get_config_packet(self.status, self.protocol))
         except Exception as e:
             logger.info(f"Error writing to device: {e}")
-            self.state = State.DISCONNECTED
+            self.state = State.RECONNECTING
 
     def connected_state(self):
         self.susbscribe_gatt_char(self.notify_callback)
