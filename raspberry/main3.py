@@ -69,14 +69,14 @@ class StateMachine:
 
     async def check_connection(self):
         """Check if the client is still connected."""
-        if not await self.client.is_connected():
+        if not await self.client.is_connected:
             while True:
                 try:
                     await self.client.connect()
-                    return await self.client.is_connected()
+                    await self.client.is_connected
+                    self.state = "connected"
                 except Exception as e:
                     print(f"Reconnection failed: {e}")
-        return True
 
 
 if __name__ == "__main__":
