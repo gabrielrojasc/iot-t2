@@ -24,12 +24,13 @@ def get_status_protocol_pairs():
 
 
 class State(Enum):
-    DISCONNECTED = 0
-    CONFIGURATION = 1
-    CONNECTING = 2
-    RECONNECTING = 3
-    CONNECTED = 4
-    FINISHED = 5
+    DISCONNECTED = "DISCONNECTED"
+    CONFIGURATION = "CONFIGURATION"
+    SUSBSCRIBING = "SUSBSCRIBING"
+    CONNECTING = "CONNECTING"
+    RECONNECTING = "RECONNECTING"
+    CONNECTED = "CONNECTED"
+    FINISHED = "FINISHED"
 
 
 class GATTHelper:
@@ -70,18 +71,10 @@ class StateMachine(GATTHelper):
     def start(self):
         while True:
             logger.info(f"Current state: {self.state}")
-            if self.state == State.DISCONNECTED:
-                self.disconnected_state()
-            elif self.state == State.CONNECTING:
-                self.check_connection()
-            elif self.state == State.CONFIGURATION:
-                self.configuration_state()
-            elif self.state == State.RECONNECTING:
-                self.reconnecting_state()
-            elif self.state == State.CONNECTED:
-                self.connected_state()
-            elif self.state == State.FINISHED:
+            if self.state == State.FINISHED:
                 break
+            method = getattr(self, f"{self.state.value.lower()}_state")
+            method()
 
     def disconnected_state(self):
         self.loop.run_until_complete(self.disconnected_state_async())
@@ -91,10 +84,10 @@ class StateMachine(GATTHelper):
         self.client = BleakClient(self.device_address)
         self.state = State.CONNECTING
 
-    def check_connection(self):
-        self.loop.run_until_complete(self.check_connection_async())
+    def connecting_state(self):
+        self.loop.run_until_complete(self.connecting_state_async())
 
-    async def check_connection_async(self) -> bool:
+    async def connecting_state_async(self) -> bool:
         """Check if the client is still connected."""
         if not self.client.is_connected:
             try:
@@ -118,8 +111,10 @@ class StateMachine(GATTHelper):
 
     def configuration_state(self):
         self.write_gatt_char(get_config_packet(self.status, self.protocol))
+        self.state = State.SUSBSCRIBING
+
+    def susbcribing_state(self):
         self.susbscribe_gatt_char(self.notify_callback)
-        self.state = State.RECONNECTING
 
     def connected_state(self):
         if not self.client.is_connected:
