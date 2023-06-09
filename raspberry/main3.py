@@ -61,6 +61,7 @@ class StateMachine(GATTHelper):
         self.characteristic_uuid = "0000FF01-0000-1000-8000-00805f9b34fb"
         self.reconnect_delay = 5  # Delay in seconds before attempting reconnection
         self.packets_received = 0
+        self.first_connection = True
 
     def start(self):
         while True:
@@ -92,10 +93,11 @@ class StateMachine(GATTHelper):
                 self.state = "disconnected"
 
     def connected_state(self):
-        # write config
-        self.write_gatt_char(get_config_packet(30, "0"))
-
-        self.susbscribe_gatt_char()
+        if self.first_connection:
+            # write config and subscribe
+            self.write_gatt_char(get_config_packet(30, "0"))
+            self.susbscribe_gatt_char()
+            self.first_connection = False
 
     def notify_callback(self, sender, data):
         data = self.read_gatt_char()
@@ -108,6 +110,7 @@ class StateMachine(GATTHelper):
         self.write_gatt_char(get_config_packet(10, "0"))
         self.packets_received = 0
         self.state = "disconnected"
+        self.first_connection = True
         self.client.disconnect()
 
 
