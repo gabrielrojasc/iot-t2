@@ -99,7 +99,7 @@ class StateMachine(GATTHelper):
         # write config and subscribe
         self.write_gatt_char(get_config_packet(30, "0"))
         self.susbscribe_gatt_char(self.notify_callback)
-        self.first_connection = False
+        self.state = State.CONNECTED
 
     def connected_state(self):
         ...
