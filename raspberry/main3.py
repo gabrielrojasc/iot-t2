@@ -37,13 +37,16 @@ async def main():
     status_protocol_pairs = get_status_protocol_pairs()
     for status, protocol in status_protocol_pairs:
         print(f"status: {status}, protocol: {protocol}")
-        client = Client(DEVICE_ADDRESS, disconnected_callback=disconnected_callback)
-        await client.connect()
-        config_packet = get_config_packet(status, protocol)
-        client.write_gatt_char(CHARACTERISTIC_UUID, config_packet)
-        sleep(1)
-        packet = client.read_gatt_char(CHARACTERISTIC_UUID)
-        print(f"{packet=}")
+        async with Client(
+            DEVICE_ADDRESS,
+            disconnected_callback=disconnected_callback,
+        ) as client:
+            await client.connect()
+            config_packet = get_config_packet(status, protocol)
+            client.write_gatt_char(CHARACTERISTIC_UUID, config_packet)
+            sleep(1)
+            packet = client.read_gatt_char(CHARACTERISTIC_UUID)
+            print(f"{packet=}")
 
 
 if __name__ == "__main__":
