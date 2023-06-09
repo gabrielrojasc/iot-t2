@@ -3,6 +3,7 @@ import logging
 from struct import pack
 from bleak import BleakClient
 from enum import Enum
+from time import sleep
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("BLE")
@@ -75,6 +76,7 @@ class StateMachine(GATTHelper):
                 break
             method = getattr(self, f"{self.state.value.lower()}_state")
             method()
+            sleep(1)
 
     def disconnected_state(self):
         self.loop.run_until_complete(self.disconnected_state_async())
@@ -117,6 +119,7 @@ class StateMachine(GATTHelper):
         try:
             self.susbscribe_gatt_char(self.notify_callback)
             self.state = State.CONNECTED
+            logger.info("Subscribed to device")
         except Exception as e:
             logger.info(f"Error subscribing to device: {e}")
             self.state = State.RECONNECTING
