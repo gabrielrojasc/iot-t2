@@ -53,7 +53,7 @@ createLoss = """CREATE TABLE Loss (
     id_loss INTEGER PRIMARY KEY AUTOINCREMENT,
 
     time_to_connect REAL,
-    connection_attempts INTEGER,
+    connection_attempts INTEGER
 );"""
 
 
