@@ -12,24 +12,8 @@ def get_configs():
         rows = cur.fetchall()
         return rows
 
-def save_packet_loss(row_id, previous_timestamp,  bytes_loss):
-    with sql.connect("DB.sqlite") as con:
-        cur = con.cursor()
-        now = datetime.datetime.now()
-        # Insert de Loss
-        if previous_timestamp is not None:
-            delay = now - previous_timestamp
-        else:
-            delay = None
 
-        cur.execute(
-            """insert into Loss (datos, Timedelay, Packet_loss) values (?, ?, ?)""",
-            (row_id, delay, bytes_loss),
-        )  # Cambiar para guardar el Packet_loss
-
-
-
-def data_save(header, data, bytes_loss):
+def data_save(header, data):
     now = datetime.datetime.now()
 
     with sql.connect("DB.sqlite") as con:
@@ -40,12 +24,6 @@ def data_save(header, data, bytes_loss):
             "SELECT Timestamp FROM Datos ORDER BY id_datos DESC LIMIT 1"
         )
         row = cursor.fetchone()
-        previous_timestamp = row[0] if row else None
-
-        if header is None:
-            save_packet_loss(None, previous_timestamp, bytes_loss)
-            return 
-
 
         # Datos comunes para todos los protocolos
         cur.execute(
@@ -118,5 +96,11 @@ def data_save(header, data, bytes_loss):
             ),
         )
 
-        save_packet_loss(row_id, previous_timestamp, bytes_loss)
 
+def save_loss(time_to_connect, connection_attempts):
+    with sql.connect("DB.sqlite") as con:
+        cur = con.cursor()
+        cur.execute(
+            """insert into Loss (time_to_connect, connection_attempts) values (?, ?)""",
+            (time_to_connect, connection_attempts),
+        )

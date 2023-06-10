@@ -30,22 +30,21 @@ def parse_data(packet, expected_protocol: int):
     header = packet[:12]
     data = packet[12:]
     header = header_dict(header)
-    dataD = None
+    data_dict = None
     if header is not None:
         protocol = header["protocol"]
-        dataD = data_dict(protocol, data)
-    bytes_loss = len(packet) - (12 + DATA_EXPECTED_LEN[expected_protocol])
+        data_dict = get_data_dict(protocol, data)
 
-    data_save(header, dataD, bytes_loss)
+    data_save(header, data_dict)
 
-    if dataD is None:
+    if data_dict is None:
         print("Error: dataD is None")
         return None
     elif header is None:
         print("Error: Header is None")
         return None
 
-    return {**header, **dataD}
+    return {**header, **data_dict}
 
 
 def prot_unpack(protocol: int, data):
@@ -89,7 +88,7 @@ def header_dict(data):
     }
 
 
-def data_dict(protocol: int, data):
+def get_data_dict(protocol: int, data):
     if protocol not in [0, 1, 2, 3, 4, 5]:
         print("Error: protocol doesnt exist")
         return None

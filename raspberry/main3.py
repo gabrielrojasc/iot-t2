@@ -1,3 +1,5 @@
+import db
+import time
 import traceback
 import asyncio
 import logging
@@ -67,6 +69,8 @@ class StateMachine(GATTHelper):
         self.device_address = "4C:EB:D6:62:18:3A"
         self.characteristic_uuid = "0000FF01-0000-1000-8000-00805f9b34fb"
         self.packets_received = 0
+        self.time_to_connect = 0.0
+        self.connection_attempts = 0
 
     def start(self):
         while True:
@@ -90,24 +94,32 @@ class StateMachine(GATTHelper):
     async def connecting_state_async(self) -> bool:
         """Check if the client is still connected."""
         if not self.client.is_connected:
-            try:
-                await self.client.connect()
-                self.state = State.CONFIGURATION
-            except Exception as e:
-                logger.warning("Error connecting to device: {}".format(e))
-                self.state = State.DISCONNECTED
+            await self.try_reconnect(State.CONFIGURATION, State.DISCONNECTED)
 
     def reconnecting_state(self):
         self.loop.run_until_complete(self.reconnecting_state_async())
 
     async def reconnecting_state_async(self):
         if not self.client.is_connected:
-            try:
-                await self.client.connect()
-                self.state = State.SUBSCRIBING
-            except Exception as e:
-                logger.warning("Error connecting to device: {}".format(e))
-                self.state = State.RECONNECTING
+            await self.try_reconnect(State.SUBSCRIBING, State.RECONNECTING)
+
+    async def try_reconnect(self, successful_state, error_state):
+        t1 = time.time()
+        self.connection_attempts += 1
+        try:
+            await self.client.connect()
+            self.state = successful_state
+            self.time_to_connect += time.time() - t1
+            self.save_loss()
+        except Exception as e:
+            logger.warning("Error connecting to device: {}".format(e))
+            self.state = error_state
+            self.time_to_connect += time.time() - t1
+
+    def save_loss(self):
+        db.save_loss(self.time_to_connect, self.connection_attempts)
+        self.time_to_connect = 0.0
+        self.connection_attempts = 0
 
     def configuration_state(self):
         self.write_gatt_char(get_config_packet(self.status, self.protocol))
@@ -129,6 +141,9 @@ class StateMachine(GATTHelper):
         if self.data_ready:
             data = self.read_gatt_char()
             logger.info(f"Received data: {data}")
+            self.packets_received += 1
+            if self.packets_received >= 3:
+                self.state = State.DISCONNECTING
             try:
                 parsed_data = parse_data(data, int(self.protocol))
                 logger.info(f"Parsed data: {parsed_data}")
@@ -146,9 +161,6 @@ class StateMachine(GATTHelper):
     def notify_callback(self, sender, data):
         logger.info(f"{sender=}, {data=}")
         self.data_ready = True
-        self.packets_received += 1
-        if self.packets_received >= 3:
-            self.state = State.DISCONNECTING
 
     def disconnecting_state(self):
         self.loop.run_until_complete(self.disconnecting_state_async())

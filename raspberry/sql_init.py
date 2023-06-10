@@ -48,23 +48,22 @@ createConfiguracion = """CREATE TABLE Configuracion (
     transport_layer TINYINT NOT NULL
 );"""
 
+# time_to_connect is in milliseconds
 createLoss = """CREATE TABLE Loss (
     id_loss INTEGER PRIMARY KEY AUTOINCREMENT,
-    datos INTEGER NOT NULL,
 
-    Timedelay DATETIME DEFAULT CURRENT_TIMESTAMP,
-    Packet_loss INTEGER,
-
-    FOREIGN KEY(datos) REFERENCES Datos(id_datos)
+    time_to_connect REAL,
+    connection_attempts INTEGER,
 );"""
 
 
 def create_config(cur):
-    tp_layers = [10, 30, 31] # BLE
+    tp_layers = [10, 30, 31]  # BLE
     for protocol in range(4):
         for transport_layer in tp_layers:
             print(
-                f"Creando configuración: protocolo {protocol}, capa de transporte {transport_layer}"
+                f"Creando configuración: protocolo {protocol}"
+                f", capa de transporte {transport_layer}"
             )
             cur.execute(
                 "INSERT INTO Configuracion (protocol, transport_layer) VALUES (?, ?);",
