@@ -169,5 +169,5 @@ class StateMachine(GATTHelper):
 
 if __name__ == "__main__":
     for protocol, status in db.get_configs():
-        sm = StateMachine(status, protocol)
+        sm = StateMachine(status, str(protocol))
         sm.start()
