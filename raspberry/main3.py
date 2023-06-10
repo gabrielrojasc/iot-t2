@@ -36,21 +36,21 @@ class State(Enum):
 
 class GATTHelper:
     def read_gatt_char(self):
-        return asyncio.run(self.read_gatt_char_async())
+        return self.loop.run_until_complete(self.read_gatt_char_async())
 
     async def read_gatt_char_async(self):
         return await self.client.read_gatt_char(self.characteristic_uuid)
 
     def write_gatt_char(self, data):
         logger.info(f"Writing {data} to {self.characteristic_uuid}")
-        return asyncio.run(self.write_gatt_char_async(data))
+        return self.loop.run_until_complete(self.write_gatt_char_async(data))
 
     async def write_gatt_char_async(self, data):
         return await self.client.write_gatt_char(self.characteristic_uuid, data)
 
     def susbscribe_gatt_char(self, notify_callback):
         logger.info(f"Subscribing to {self.characteristic_uuid}")
-        asyncio.run(self.susbscribe_gatt_char_async(notify_callback))
+        asyncio.create_task(self.susbscribe_gatt_char_async(notify_callback))
 
     async def susbscribe_gatt_char_async(self, notify_callback):
         await self.client.start_notify(self.characteristic_uuid, notify_callback)
@@ -61,6 +61,7 @@ class StateMachine(GATTHelper):
         self.status = status
         self.protocol = protocol
         self.state = State.DISCONNECTED
+        self.loop = asyncio.get_event_loop()
         self.device_address = "4C:EB:D6:62:18:3A"
         self.characteristic_uuid = "0000FF01-0000-1000-8000-00805f9b34fb"
         self.reconnect_delay = 5  # Delay in seconds before attempting reconnection
@@ -76,7 +77,7 @@ class StateMachine(GATTHelper):
             method()
 
     def disconnected_state(self):
-        asyncio.run(self.disconnected_state_async())
+        self.loop.run_until_complete(self.disconnected_state_async())
 
     async def disconnected_state_async(self):
         logger.info(f"Disconnected. Connecting to device: {self.device_address}")
@@ -84,7 +85,7 @@ class StateMachine(GATTHelper):
         self.state = State.CONNECTING
 
     def connecting_state(self):
-        asyncio.run(self.connecting_state_async())
+        self.loop.run_until_complete(self.connecting_state_async())
 
     async def connecting_state_async(self) -> bool:
         """Check if the client is still connected."""
@@ -97,7 +98,7 @@ class StateMachine(GATTHelper):
                 self.state = State.DISCONNECTED
 
     def reconnecting_state(self):
-        asyncio.run(self.reconnecting_state_async())
+        self.loop.run_until_complete(self.reconnecting_state_async())
 
     async def reconnecting_state_async(self):
         if not self.client.is_connected:
@@ -130,7 +131,7 @@ class StateMachine(GATTHelper):
         # data = self.read_gatt_char()
         self.packets_received += 1
         if self.packets_received >= 3:
-            asyncio.run(self.disconnect())
+            self.loop.run_until_complete(self.disconnect())
 
     async def disconnect(self):
         self.write_gatt_char_wait_for_config()
