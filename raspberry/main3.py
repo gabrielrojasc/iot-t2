@@ -132,9 +132,6 @@ class StateMachine(GATTHelper):
     async def go_to_sleep_async(self, seconds):
         await asyncio.sleep(seconds)
 
-    def disconnecting_state(self):
-        self.loop.run_until_complete(self.disconnect())
-
     def notify_callback(self, sender, data):
         logger.info(f"{sender=}, {data=}")
         # data = self.read_gatt_char()
@@ -142,7 +139,11 @@ class StateMachine(GATTHelper):
         if self.packets_received >= 3:
             self.state = State.DISCONNECTING
 
-    async def disconnect(self):
+    def disconnecting_state(self):
+        self.loop.run_until_complete(self.disconnecting_state_async())
+
+    async def disconnecting_state_async(self):
+        self.loop.stop()
         self.write_gatt_char_wait_for_config()
         self.packets_received = 0
         self.state = State.FINISHED
