@@ -170,7 +170,7 @@ class StateMachine(GATTHelper):
 
 
 if __name__ == "__main__":
-    for protocol, status in [(3, 31)]:  # db.get_configs():
+    for protocol, status in db.get_configs():
         logger.info(f"Starting with {protocol=}, {status=}")
         print()
         sm = StateMachine(status, str(protocol))
