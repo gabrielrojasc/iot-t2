@@ -1,3 +1,4 @@
+import traceback
 import asyncio
 import logging
 from struct import pack
@@ -133,6 +134,7 @@ class StateMachine(GATTHelper):
                 logger.info(f"Parsed data: {parsed_data}")
             except Exception as e:
                 logger.error(f"Error parsing data: {e}")
+                traceback.print_exc()
             self.data_ready = False
 
     def go_to_sleep(self, seconds):
