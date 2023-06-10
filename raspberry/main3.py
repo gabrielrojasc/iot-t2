@@ -125,6 +125,10 @@ class StateMachine(GATTHelper):
         if not self.client.is_connected:
             self.state = State.RECONNECTING
         self.go_to_sleep(1)
+        if self.data_ready:
+            data = self.read_gatt_char()
+            logger.info(f"Received data: {data}")
+            self.data_ready = False
 
     def go_to_sleep(self, seconds):
         self.loop.run_until_complete(self.go_to_sleep_async(seconds))
@@ -134,7 +138,7 @@ class StateMachine(GATTHelper):
 
     def notify_callback(self, sender, data):
         logger.info(f"{sender=}, {data=}")
-        # data = self.read_gatt_char()
+        self.data_ready = True
         self.packets_received += 1
         if self.packets_received >= 3:
             self.state = State.DISCONNECTING
