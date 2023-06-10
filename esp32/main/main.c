@@ -421,7 +421,7 @@ void ble_continous()
     }
     vTaskDelay(500 / portTICK_PERIOD_MS);
     send_indicate();
-    vTaskDelay(3000 / portTICK_PERIOD_MS);
+    vTaskDelay(5000 / portTICK_PERIOD_MS);
     free(payload);
   }
 }
@@ -444,12 +444,13 @@ void ble_discontinous()
     }
     vTaskDelay(500 / portTICK_PERIOD_MS);
     send_indicate();
-    vTaskDelay(3000 / portTICK_PERIOD_MS);
+    vTaskDelay(5000 / portTICK_PERIOD_MS);
     free(payload);
 
     if (config.status == 31 && needs_deep_sleep)
     {
       uint64_t discontinous_time = 30 * 1000000;
+      ESP_LOGW(GATTS_TAG, "Going to sleep for %lld seconds", discontinous_time / 1000000);
       esp_sleep_enable_timer_wakeup(discontinous_time);
       esp_deep_sleep_start();
     }
@@ -538,8 +539,6 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
     {
       ESP_LOGI(GATTS_TAG, "GATT_WRITE_EVT, value len %d, value :", param->write.len);
       esp_log_buffer_hex(GATTS_TAG, param->write.value, param->write.len);
-      ESP_LOGI(GATTS_TAG, "GATT_WRITE_EVT, value len %d, value :", param->write.len);
-      esp_log_buffer_hex(GATTS_TAG, param->write.value, param->write.len);
       if (gl_profile_tab[PROFILE_A_APP_ID].descr_handle == param->write.handle && param->write.len == 2)
       {
         uint16_t descr_value = param->write.value[1] << 8 | param->write.value[0];
@@ -554,7 +553,6 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
                                         sizeof(notify_data), notify_data, false);
             if (needs_reset)
             {
-              ESP_LOGI(GATTS_TAG, "Resetting");
               esp_restart();
             }
           }
@@ -594,7 +592,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
           config_t config;
           config.status = status;
           config.protocol = protocol;
-          ESP_LOGI("CHANGE_CONFIG", "status: %d, protocol: %c", status, protocol);
+          ESP_LOGI("CHANGE_CONFIG", "status: %d, protocol: %c\n", status, protocol);
           store_config(&config);
           needs_reset = true;
         }
@@ -648,11 +646,11 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
       ESP_LOGE(GATTS_TAG, "ILLEGAL HANDLE");
     }
 
-    ESP_LOGI(GATTS_TAG, "the gatts demo char length = %x\n", length);
-    for (int i = 0; i < length; i++)
-    {
-      ESP_LOGI(GATTS_TAG, "prf_char[%x] =%x\n", i, prf_char[i]);
-    }
+    // ESP_LOGI(GATTS_TAG, "the gatts demo char length = %x\n", length);
+    // for (int i = 0; i < length; i++)
+    // {
+    //   ESP_LOGI(GATTS_TAG, "prf_char[%x] =%x\n", i, prf_char[i]);
+    // }
     esp_err_t add_descr_ret = esp_ble_gatts_add_char_descr(gl_profile_tab[PROFILE_A_APP_ID].service_handle, &gl_profile_tab[PROFILE_A_APP_ID].descr_uuid,
                                                            ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE, NULL, NULL);
     if (add_descr_ret)
@@ -828,14 +826,14 @@ void app_main(void)
   config_t config;
   retrieve_config(&config);
 
-  ESP_LOGI("CUR_CONFIG", "status: %d, protocol: %c", config.status, config.protocol);
+  ESP_LOGI("CUR_CONFIG", "status: %d, protocol: %c\n", config.status, config.protocol);
   if (config.status == 30)
   {
     ble_continous();
   }
   else if (config.status == 31)
   {
-    ESP_LOGI(GATTS_TAG, "waked up from deep sleep");
+    ESP_LOGI("DEEP_SLEEP", "waked up from deep sleep\n");
     ble_discontinous();
   }
 
