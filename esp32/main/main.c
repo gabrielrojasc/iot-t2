@@ -435,9 +435,8 @@ void ble_discontinous()
     {
       return;
     }
-
     char *payload = mensaje(config.protocol, (char)config.status);
-    int len = sizeof(payload);
+    int len = messageLength(config.protocol);
     esp_err_t err = esp_ble_gatts_set_attr_value(gl_profile_tab[PROFILE_A_APP_ID].char_handle, len, (uint8_t *)payload);
     if (err)
     {

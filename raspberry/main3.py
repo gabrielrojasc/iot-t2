@@ -176,5 +176,6 @@ class StateMachine(GATTHelper):
 
 
 if __name__ == "__main__":
-    sm = StateMachine(31, "0")
-    sm.start()
+    for status, protocol in get_status_protocol_pairs():
+        sm = StateMachine(status, protocol)
+        sm.start()
