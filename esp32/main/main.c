@@ -449,7 +449,7 @@ void ble_discontinous()
 
     if (config.status == 31 && needs_deep_sleep)
     {
-      uint64_t discontinous_time = 3 * 1000000;
+      uint64_t discontinous_time = 30 * 1000000;
       esp_sleep_enable_timer_wakeup(discontinous_time);
       esp_deep_sleep_start();
     }
