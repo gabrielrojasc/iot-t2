@@ -93,7 +93,7 @@ class StateMachine(GATTHelper):
                 await self.client.connect()
                 self.state = State.CONFIGURATION
             except Exception as e:
-                print("Error connecting to device: {}".format(e))
+                logger.warning("Error connecting to device: {}".format(e))
                 self.state = State.DISCONNECTED
 
     def reconnecting_state(self):
@@ -105,7 +105,7 @@ class StateMachine(GATTHelper):
                 await self.client.connect()
                 self.state = State.SUBSCRIBING
             except Exception as e:
-                print("Error connecting to device: {}".format(e))
+                logger.warning("Error connecting to device: {}".format(e))
                 self.state = State.RECONNECTING
 
     def configuration_state(self):
