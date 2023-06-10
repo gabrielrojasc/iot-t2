@@ -143,8 +143,8 @@ class StateMachine(GATTHelper):
         self.loop.run_until_complete(self.disconnecting_state_async())
 
     async def disconnecting_state_async(self):
-        self.loop.stop()
-        self.write_gatt_char_wait_for_config()
+        # self.loop.close()
+        # self.write_gatt_char_wait_for_config()
         self.packets_received = 0
         self.state = State.FINISHED
         await self.client.disconnect()
