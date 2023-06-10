@@ -36,6 +36,10 @@ char *header(char protocol, char transportLayer)
   unsigned short dataLen = dataLength(protocol);
   memcpy((void *)&(head[10]), (void *)&dataLen, 2);
   free(MACaddrs);
+  for (int i = 0; i < 12; i++)
+  {
+    ESP_LOGE("header", "0x%x", head[i]);
+  }
   return head;
 }
 
@@ -52,6 +56,7 @@ unsigned short messageLength(char protocol)
 
 char *mensaje(char protocol, char transportLayer)
 {
+  ESP_LOGE("transportLayer", "transportLayer: 0x%x", transportLayer);
   char *mnsj = malloc(messageLength(protocol));
   // mnsj[messageLength(protocol)-1]= '\0';
   char *hdr = header(protocol, transportLayer);
@@ -76,6 +81,9 @@ char *mensaje(char protocol, char transportLayer)
   }
   memcpy((void *)mnsj, (void *)hdr, 12);
   memcpy((void *)&(mnsj[12]), (void *)data, dataLength(protocol));
+  ESP_LOGI("mensaje", "mensaje: %s", mnsj);
+  ESP_LOGI("mensaje", "hdr: %s", hdr);
+  ESP_LOGI("mensaje", "data: %s", data);
   free(hdr);
   free(data);
 

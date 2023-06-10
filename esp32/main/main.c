@@ -412,14 +412,16 @@ void ble_continous()
     }
 
     char *payload = mensaje(config.protocol, (char)config.status);
-    int len = sizeof(payload);
+    int len = messageLength(config.protocol);
+    ESP_LOGI(GATTS_TAG, "Sending %s, len: %d", payload, len);
     esp_err_t err = esp_ble_gatts_set_attr_value(gl_profile_tab[PROFILE_A_APP_ID].char_handle, len, (uint8_t *)payload);
     if (err)
     {
       ESP_LOGE(GATTS_TAG, "gatts set attr value failed, error code = %x", err);
     }
-    send_indicate();
     vTaskDelay(2000 / portTICK_PERIOD_MS);
+    send_indicate();
+    free(payload);
   }
 }
 void ble_discontinous()
@@ -498,7 +500,13 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
 
     memset(&rsp, 0, sizeof(esp_gatt_rsp_t));
 
-    esp_err_t err = esp_ble_gatts_get_attr_value(gl_profile_tab[PROFILE_A_APP_ID].char_handle, &rsp.attr_value.len, (uint8_t *)rsp.attr_value.value);
+    uint8_t *values = malloc(sizeof(&rsp.attr_value.value) + 1);
+
+    esp_err_t err = esp_ble_gatts_get_attr_value(gl_profile_tab[PROFILE_A_APP_ID].char_handle, &rsp.attr_value.len, &values);
+
+    memcpy(rsp.attr_value.value, values, rsp.attr_value.len);
+    ESP_LOGI(GATTS_TAG, "GATT_READ_EVT, value len %d, value:", rsp.attr_value.len);
+    esp_log_buffer_hex(GATTS_TAG, rsp.attr_value.value, rsp.attr_value.len);
 
     esp_ble_gatts_send_response(gatts_if, param->read.conn_id, param->read.trans_id,
                                 ESP_GATT_OK, &rsp);

@@ -83,7 +83,7 @@ def header_dict(data):
     return {
         "id_device": id_device,
         "MAC": MAC,
-        "transport_layer": int(transport_layer),
+        "transport_layer": ord(transport_layer),
         "protocol": int(protocol),
         "length": leng_msg,
     }
