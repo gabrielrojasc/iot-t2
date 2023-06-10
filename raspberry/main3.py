@@ -124,7 +124,7 @@ class StateMachine(GATTHelper):
     def connected_state(self):
         if not self.client.is_connected:
             self.state = State.RECONNECTING
-        self.go_to_sleep(3)
+        self.go_to_sleep(1)
 
     def go_to_sleep(self, seconds):
         self.loop.run_until_complete(self.go_to_sleep_async(seconds))
@@ -143,14 +143,13 @@ class StateMachine(GATTHelper):
         self.loop.run_until_complete(self.disconnecting_state_async())
 
     async def disconnecting_state_async(self):
-        # self.loop.close()
-        # self.write_gatt_char_wait_for_config()
+        await self.write_gatt_char_wait_for_config()
         self.packets_received = 0
         self.state = State.FINISHED
         await self.client.disconnect()
 
-    def write_gatt_char_wait_for_config(self):
-        self.write_gatt_char(get_config_packet(10, "0"))
+    async def write_gatt_char_wait_for_config(self):
+        await self.write_gatt_char_async(get_config_packet(10, "0"))
 
 
 if __name__ == "__main__":
