@@ -48,11 +48,11 @@ class GATTHelper:
     async def write_gatt_char_async(self, data):
         return await self.client.write_gatt_char(self.characteristic_uuid, data)
 
-    def subscribe_gatt_char(self, notify_callback):
+    def susbscribe_gatt_char(self, notify_callback):
         logger.info(f"Subscribing to {self.characteristic_uuid}")
-        asyncio.create_task(self.subscribe_gatt_char_async(notify_callback))
+        self.loop.run_forever(self.susbscribe_gatt_char_async(notify_callback))
 
-    async def subscribe_gatt_char_async(self, notify_callback):
+    async def susbscribe_gatt_char_async(self, notify_callback):
         await self.client.start_notify(self.characteristic_uuid, notify_callback)
 
 
@@ -64,9 +64,7 @@ class StateMachine(GATTHelper):
         self.loop = asyncio.get_event_loop()
         self.device_address = "4C:EB:D6:62:18:3A"
         self.characteristic_uuid = "0000FF01-0000-1000-8000-00805f9b34fb"
-        self.reconnect_delay = 5  # Delay in seconds before attempting reconnection
         self.packets_received = 0
-        self.first_connection = True
 
     def start(self):
         while True:
@@ -115,7 +113,7 @@ class StateMachine(GATTHelper):
 
     def subscribing_state(self):
         try:
-            self.subscribe_gatt_char(self.notify_callback)
+            self.susbscribe_gatt_char(self.notify_callback)
             self.state = State.CONNECTED
             logger.info("Subscribed to device")
         except Exception as e:
@@ -123,7 +121,7 @@ class StateMachine(GATTHelper):
             self.state = State.RECONNECTING
 
     def connected_state(self):
-        if not self.client.is_connected:
+        if not self.loop.is_running() and not self.client.is_connected:
             self.state = State.RECONNECTING
 
     def notify_callback(self, sender, data):
@@ -131,6 +129,7 @@ class StateMachine(GATTHelper):
         # data = self.read_gatt_char()
         self.packets_received += 1
         if self.packets_received >= 3:
+            asyncio.get_running_loop().stop()
             self.loop.run_until_complete(self.disconnect())
 
     async def disconnect(self):
