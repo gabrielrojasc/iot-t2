@@ -165,7 +165,7 @@ class StateMachine(GATTHelper):
         await self.write_gatt_char_async(get_config_packet(10, "0"))
 
     def set_state(self, state):
-        self.set_state(state)
+        self.state = state
         logger.info("Current state: {}".format(self.state))
 
 
