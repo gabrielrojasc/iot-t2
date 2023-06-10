@@ -35,14 +35,14 @@ def parse_data(packet, expected_protocol: int):
         protocol = header["protocol"]
         data_dict = get_data_dict(protocol, data)
 
-    data_save(header, data_dict)
-
     if data_dict is None:
-        print("Error: dataD is None")
+        print("Error: data_dict is None")
         return None
-    elif header is None:
+    if header is None:
         print("Error: Header is None")
         return None
+
+    data_save(header, data_dict)
 
     return {**header, **data_dict}
 
@@ -76,7 +76,7 @@ def header_dict(data):
             protocol,
             leng_msg,
         ) = unpack("<2s6BccH", data)
-    except:
+    except Exception as e:
         return None
     MAC = ":".join([hex(x)[2:] for x in [M1, M2, M3, M4, M5, M6]])
     return {
