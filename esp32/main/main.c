@@ -30,6 +30,7 @@ void send_indicate();
 const char *g_namespace = "my_namespace";
 const char *g_key = "my_key";
 bool needs_reset = false;
+bool needs_deep_sleep = false;
 
 /*
 status:
@@ -413,36 +414,47 @@ void ble_continous()
 
     char *payload = mensaje(config.protocol, (char)config.status);
     int len = messageLength(config.protocol);
-    ESP_LOGI(GATTS_TAG, "Sending %s, len: %d", payload, len);
     esp_err_t err = esp_ble_gatts_set_attr_value(gl_profile_tab[PROFILE_A_APP_ID].char_handle, len, (uint8_t *)payload);
     if (err)
     {
       ESP_LOGE(GATTS_TAG, "gatts set attr value failed, error code = %x", err);
     }
-    vTaskDelay(2000 / portTICK_PERIOD_MS);
+    vTaskDelay(500 / portTICK_PERIOD_MS);
     send_indicate();
+    vTaskDelay(3000 / portTICK_PERIOD_MS);
     free(payload);
   }
 }
 void ble_discontinous()
 {
-  config_t config;
-  retrieve_config(&config);
-  if (config.status == 10)
+  while (true)
   {
-    return;
-  }
+    config_t config;
+    retrieve_config(&config);
+    if (config.status == 10)
+    {
+      return;
+    }
 
-  char *payload = mensaje(config.protocol, (char)config.status);
-  int len = sizeof(payload);
-  esp_err_t err = esp_ble_gatts_set_attr_value(gl_profile_tab[PROFILE_A_APP_ID].char_handle, len, (uint8_t *)payload);
-  if (err)
-  {
-    ESP_LOGE(GATTS_TAG, "gatts set attr value failed, error code = %x", err);
+    char *payload = mensaje(config.protocol, (char)config.status);
+    int len = sizeof(payload);
+    esp_err_t err = esp_ble_gatts_set_attr_value(gl_profile_tab[PROFILE_A_APP_ID].char_handle, len, (uint8_t *)payload);
+    if (err)
+    {
+      ESP_LOGE(GATTS_TAG, "gatts set attr value failed, error code = %x", err);
+    }
+    vTaskDelay(500 / portTICK_PERIOD_MS);
+    send_indicate();
+    vTaskDelay(3000 / portTICK_PERIOD_MS);
+    free(payload);
+
+    if (config.status == 31 && needs_deep_sleep)
+    {
+      uint64_t discontinous_time = 3 * 1000000;
+      esp_sleep_enable_timer_wakeup(discontinous_time);
+      esp_deep_sleep_start();
+    }
   }
-  send_indicate();
-  vTaskDelay(2000 / portTICK_PERIOD_MS);
-  ble_discontinous();
 }
 
 static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)
@@ -500,7 +512,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
 
     memset(&rsp, 0, sizeof(esp_gatt_rsp_t));
 
-    uint8_t *values = malloc(sizeof(&rsp.attr_value.value) + 1);
+    uint8_t *values;
 
     esp_err_t err = esp_ble_gatts_get_attr_value(gl_profile_tab[PROFILE_A_APP_ID].char_handle, &rsp.attr_value.len, &values);
 
@@ -510,6 +522,13 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
 
     esp_ble_gatts_send_response(gatts_if, param->read.conn_id, param->read.trans_id,
                                 ESP_GATT_OK, &rsp);
+
+    config_t config;
+    retrieve_config(&config);
+    if (config.status == 31)
+    {
+      needs_deep_sleep = true;
+    }
 
     break;
   }

@@ -176,5 +176,5 @@ class StateMachine(GATTHelper):
 
 
 if __name__ == "__main__":
-    sm = StateMachine(30, "0")
+    sm = StateMachine(31, "0")
     sm.start()
