@@ -130,7 +130,7 @@ class StateMachine(GATTHelper):
             data = self.read_gatt_char()
             logger.info(f"Received data: {data}")
             try:
-                parsed_data = parse_data(data, self.protocol)
+                parsed_data = parse_data(data, int(self.protocol))
                 logger.info(f"Parsed data: {parsed_data}")
             except Exception as e:
                 logger.error(f"Error parsing data: {e}")

@@ -26,16 +26,15 @@ def response(change: bool = False, status: int = 255, protocol: int = 255):
     return pack("<BBBB", OK, CHANGE, status, protocol)
 
 
-def parse_data(packet, expected_protocol):
+def parse_data(packet, expected_protocol: int):
     header = packet[:12]
     data = packet[12:]
     header = header_dict(header)
     dataD = None
-    protocol = expected_protocol
     if header is not None:
         protocol = header["protocol"]
         dataD = data_dict(protocol, data)
-    bytes_loss = len(packet) - (12 + DATA_EXPECTED_LEN[protocol])
+    bytes_loss = len(packet) - (12 + DATA_EXPECTED_LEN[expected_protocol])
 
     data_save(header, dataD, bytes_loss)
 
