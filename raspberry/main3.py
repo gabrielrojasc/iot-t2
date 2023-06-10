@@ -3,7 +3,7 @@ import logging
 from struct import pack
 from bleak import BleakClient
 from enum import Enum
-from time import sleep
+from unpacking import parse_data
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("BLE")
@@ -128,6 +128,11 @@ class StateMachine(GATTHelper):
         if self.data_ready:
             data = self.read_gatt_char()
             logger.info(f"Received data: {data}")
+            try:
+                parsed_data = parse_data(data)
+                logger.info(f"Parsed data: {parsed_data}")
+            except Exception as e:
+                logger.error(f"Error parsing data: {e}")
             self.data_ready = False
 
     def go_to_sleep(self, seconds):
