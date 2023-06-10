@@ -132,7 +132,7 @@ class StateMachine(GATTHelper):
     async def go_to_sleep_async(self, seconds):
         await asyncio.sleep(seconds)
 
-    def desconecting_state(self):
+    def disconnecting_state(self):
         self.loop.run_until_complete(self.disconnect())
 
     def notify_callback(self, sender, data):
