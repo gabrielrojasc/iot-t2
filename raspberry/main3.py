@@ -48,11 +48,11 @@ class GATTHelper:
     async def write_gatt_char_async(self, data):
         return await self.client.write_gatt_char(self.characteristic_uuid, data)
 
-    def susbscribe_gatt_char(self, notify_callback):
+    def subscribe_gatt_char(self, notify_callback):
         logger.info(f"Subscribing to {self.characteristic_uuid}")
-        asyncio.create_task(self.susbscribe_gatt_char_async(notify_callback))
+        asyncio.create_task(self.subscribe_gatt_char_async(notify_callback))
 
-    async def susbscribe_gatt_char_async(self, notify_callback):
+    async def subscribe_gatt_char_async(self, notify_callback):
         await self.client.start_notify(self.characteristic_uuid, notify_callback)
 
 
@@ -115,7 +115,7 @@ class StateMachine(GATTHelper):
 
     def subscribing_state(self):
         try:
-            self.susbscribe_gatt_char(self.notify_callback)
+            self.subscribe_gatt_char(self.notify_callback)
             self.state = State.CONNECTED
             logger.info("Subscribed to device")
         except Exception as e:
