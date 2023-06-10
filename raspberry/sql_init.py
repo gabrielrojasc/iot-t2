@@ -58,7 +58,7 @@ createLoss = """CREATE TABLE Loss (
 
 
 def create_config(cur):
-    tp_layers = [10, 30, 31]  # BLE
+    tp_layers = [30, 31]  # BLE
     for protocol in range(4):
         for transport_layer in tp_layers:
             print(

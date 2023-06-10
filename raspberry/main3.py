@@ -19,14 +19,6 @@ def get_config_packet(status, protocol):
     return pack("<2B2c", 3, 0, chr(status).encode(), protocol.encode())
 
 
-def get_status_protocol_pairs():
-    status_protocol_pairs = []
-    for status in (30, 31):
-        for protocol in range(4):
-            status_protocol_pairs.append((status, str(protocol)))
-    return status_protocol_pairs
-
-
 class State(Enum):
     DISCONNECTED = "DISCONNECTED"
     CONFIGURATION = "CONFIGURATION"
@@ -176,6 +168,6 @@ class StateMachine(GATTHelper):
 
 
 if __name__ == "__main__":
-    for status, protocol in get_status_protocol_pairs():
+    for protocol, status in db.get_configs():
         sm = StateMachine(status, protocol)
         sm.start()
