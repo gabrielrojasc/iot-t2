@@ -41,7 +41,6 @@ def data_save(header, data):
                 data["Val: 1"],
                 data["Batt_level"],
                 data["Timestamp"],
-                now,
             ),
         )
 
