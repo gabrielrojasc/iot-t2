@@ -1,4 +1,5 @@
 import db
+import os
 import time
 import traceback
 import asyncio
@@ -170,7 +171,14 @@ class StateMachine(GATTHelper):
 
 
 if __name__ == "__main__":
-    for protocol, status in db.get_configs():
+    if os.environ.get("DEMO") == "1":
+        # run case status=30 and 31 with protocol 3
+        configs = [("3", 30), ("3", 31)]
+    else:
+        # get from db
+        configs = db.get_configs()
+
+    for protocol, status in configs:
         logger.info(f"Starting with {protocol=}, {status=}")
         print()
         sm = StateMachine(status, str(protocol))
