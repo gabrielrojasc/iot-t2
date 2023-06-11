@@ -55,6 +55,8 @@ Paquetes necesarios (pip):
 
 Para correr el codigo de la raspberry en modo DEMO, se debe ir a la carpeta raspberry y correr:
 
+El modo DEMO es correr la tarea con protocol 3 y cambiar entre el status 30 y 31.
+
 ```
 DEMO=1 python3 main3.py
 ```
